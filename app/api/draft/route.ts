@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { draftSchema } from '@/lib/schemas'
-import { ApiResponse, UserRole } from '@/lib/types'
+import { ApiResponse } from '@/lib/types'
+import { assertRateLimit } from '@/lib/rate-limit'
+import { logServerError } from '@/lib/server-log'
 
 export async function PATCH(request: Request) {
   try {
-    const supabase = createClient()
+    const rate = await assertRateLimit(request, { key: 'api-draft', limit: 80, windowMs: 60_000 })
+    if (!rate.allowed) {
+      return NextResponse.json<ApiResponse<null>>(
+        { data: null, error: 'Too many requests. Please retry shortly.' },
+        { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } }
+      )
+    }
+
+    const supabase = await createClient()
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
     if (userError || !userData?.user) {
@@ -40,7 +50,7 @@ export async function PATCH(request: Request) {
       .single()
 
     if (existing.error && existing.status !== 406) {
-      console.error('Draft lookup error', existing.error)
+      logServerError('Draft lookup error', existing.error)
       return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Database error' }, { status: 500 })
     }
 
@@ -55,7 +65,7 @@ export async function PATCH(request: Request) {
         .eq('id', existing.data.id)
 
       if (error) {
-        console.error('Draft update error', error)
+        logServerError('Draft update error', error)
         return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Failed to save draft' }, { status: 500 })
       }
 
@@ -72,7 +82,7 @@ export async function PATCH(request: Request) {
 
     const inserted = await supabase.from('submissions').insert(insertData).select('id').single()
     if (inserted.error || !inserted.data) {
-      console.error('Draft insert error', inserted.error)
+      logServerError('Draft insert error', inserted.error)
       return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Failed to create draft' }, { status: 500 })
     }
 
@@ -80,7 +90,8 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json<ApiResponse<{ submission_id: string }>>({ data: { submission_id: inserted.data.id }, error: null }, { status: 200 })
   } catch (err) {
-    console.error('PATCH /api/draft error', err)
+    logServerError('PATCH /api/draft error', err)
     return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Failed to save draft' }, { status: 500 })
   }
 }
+

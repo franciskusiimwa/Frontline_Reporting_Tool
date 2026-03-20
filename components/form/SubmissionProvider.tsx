@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { useForm, FormProvider, type FieldValues } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { draftSchema, type DraftInput } from '@/lib/schemas'
 import { useDebounce } from '@/lib/utils'
@@ -10,6 +10,7 @@ import type { SubmissionStatus } from '@/lib/types'
 interface SubmissionContextValue {
   currentStep: number
   totalSteps: number
+  stepCompletion: boolean[]
   goNext: () => Promise<void>
   goPrev: () => void
   goToStep: (n: number) => void
@@ -18,6 +19,9 @@ interface SubmissionContextValue {
   lastSavedAt: Date | null
   isSaving: boolean
   isSubmitting: boolean
+  stepError: string | null
+  submitError: string | null
+  submitSuccessMessage: string | null
   handleFinalSubmit: () => Promise<void>
 }
 
@@ -34,6 +38,57 @@ const STEP_FIELDS: Array<Array<keyof DraftInput>> = [
   ['next_week_priorities', 'next_week_rationale'],
   ['what_worked', 'what_didnt'],
 ]
+
+const isFilled = (value: unknown) => {
+  if (typeof value === 'string') return value.trim().length > 0
+  if (typeof value === 'number') return Number.isFinite(value)
+  return value !== null && value !== undefined
+}
+
+function computeStepCompletion(values: DraftInput): boolean[] {
+  const priorities = values.priorities ?? []
+  const risks = values.risks ?? []
+
+  return [
+    isFilled(values.region) && isFilled(values.po_names) && isFilled(values.week_label) && isFilled(values.submission_date),
+    isFilled(values.overall_status) && isFilled(values.top_win) && isFilled(values.top_challenge) && isFilled(values.confidence_next_week),
+    isFilled(values.scholar_retention?.insight)
+      && isFilled(values.mentor_retention?.insight)
+      && isFilled(values.passbook_conversations?.insight)
+      && isFilled(values.class_size_averages?.insight),
+    priorities.length >= 3
+      && isFilled(priorities[0]?.planned) && isFilled(priorities[0]?.actual) && isFilled(priorities[0]?.insight)
+      && isFilled(priorities[1]?.planned) && isFilled(priorities[1]?.actual) && isFilled(priorities[1]?.insight)
+      && isFilled(priorities[2]?.planned) && isFilled(priorities[2]?.actual) && isFilled(priorities[2]?.insight),
+    isFilled(values.mentor_insights) && isFilled(values.scholar_insights) && isFilled(values.foa_insights),
+    risks.length >= 1 && isFilled(risks[0]?.description) && isFilled(risks[0]?.root_cause) && isFilled(risks[0]?.mitigation),
+    true,
+    isFilled(values.next_week_priorities?.[0]) && isFilled(values.next_week_priorities?.[1]) && isFilled(values.next_week_priorities?.[2]) && isFilled(values.next_week_rationale),
+    isFilled(values.what_worked) && isFilled(values.what_didnt),
+  ]
+}
+
+function findFirstErrorPath(errorValue: unknown, parentPath = ''): string | null {
+  if (!errorValue || typeof errorValue !== 'object') {
+    return parentPath || null
+  }
+
+  const entries = Object.entries(errorValue as Record<string, unknown>)
+  for (const [key, value] of entries) {
+    const nextPath = parentPath ? `${parentPath}.${key}` : key
+
+    if (value && typeof value === 'object' && 'message' in (value as Record<string, unknown>)) {
+      return nextPath
+    }
+
+    const nestedPath = findFirstErrorPath(value, nextPath)
+    if (nestedPath) {
+      return nestedPath
+    }
+  }
+
+  return parentPath || null
+}
 
 export function SubmissionProvider({ children }: { children: React.ReactNode }) {
   const methods = useForm<DraftInput>({
@@ -78,96 +133,129 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [stepError, setStepError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
   const watchedValues = methods.watch()
   const debouncedValues = useDebounce(watchedValues, 2000)
+  const stepCompletion = useMemo(() => computeStepCompletion((watchedValues ?? {}) as DraftInput), [watchedValues])
+
+  const saveDraft = async (values: DraftInput) => {
+    const payload = {
+      week_label: values.week_label || '',
+      data: values,
+    }
+
+    const response = await fetch('/api/draft', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const json = await response.json().catch(() => null)
+    if (!response.ok || json?.error) {
+      throw new Error(json?.error || 'Draft save failed')
+    }
+
+    if (json.data?.submission_id) {
+      setSubmissionId(json.data.submission_id)
+      return json.data.submission_id as string
+    }
+
+    throw new Error('Draft save did not return a submission id')
+  }
 
   useEffect(() => {
     if (!debouncedValues) return
     if (isSubmitting) return
 
-    const saveDraft = async () => {
+    const saveDraftEffect = async () => {
       setIsSaving(true)
       try {
-        const payload = {
-          week_label: debouncedValues.week_label || '',
-          data: debouncedValues,
-        }
-
-        const response = await fetch('/api/draft', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-
-        const json = await response.json()
-        if (!response.ok || json.error) {
-          console.error('Draft save failed', json.error)
-          setIsSaving(false)
-          return
-        }
-
-        if (json.data?.submission_id) {
-          setSubmissionId(json.data.submission_id)
-        }
+        await saveDraft(debouncedValues)
         setLastSavedAt(new Date())
-      } catch (err) {
-        console.error('Draft save exception', err)
+      } catch {
       } finally {
         setIsSaving(false)
       }
     }
 
-    void saveDraft()
+    void saveDraftEffect()
   }, [debouncedValues, isSubmitting])
 
   const goNext = async () => {
+    setStepError(null)
     const stepFields = STEP_FIELDS[currentStep] ?? []
     const valid = await methods.trigger(stepFields as any)
 
     if (!valid) {
-      const firstError = Object.keys(methods.formState.errors)[0]
-      if (firstError) {
-        const element = document.querySelector(`[name='${firstError}']`)
+      setStepError('Some required fields in this section are still missing or invalid. Review the highlighted inputs below.')
+      const firstErrorPath = findFirstErrorPath(methods.formState.errors)
+      if (firstErrorPath) {
+        methods.setFocus(firstErrorPath as any)
+        const element = document.querySelector(`[name='${firstErrorPath}']`)
         element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
       return
     }
 
     if (currentStep < STEP_FIELDS.length) {
+      setStepError(null)
       setCurrentStep((prev) => prev + 1)
     }
   }
 
   const goPrev = () => {
+    setStepError(null)
     setCurrentStep((prev) => Math.max(0, prev - 1))
   }
 
   const goToStep = (n: number) => {
     if (n >= 0 && n <= STEP_FIELDS.length) {
+      setStepError(null)
       setCurrentStep(n)
     }
   }
 
   const handleFinalSubmit = async () => {
+    setSubmitError(null)
+    setSubmitSuccessMessage(null)
     setIsSubmitting(true)
     try {
       const result = methods.getValues()
+      const isValid = await methods.trigger()
+      if (!isValid) {
+        setSubmitError('Some required fields are still incomplete. Review the form and try again.')
+        return
+      }
+
+      let currentSubmissionId = submissionId
+      if (!currentSubmissionId) {
+        currentSubmissionId = await saveDraft(result)
+        setLastSavedAt(new Date())
+      } else {
+        await saveDraft(result)
+        setLastSavedAt(new Date())
+      }
+
       const response = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submission_id: submissionId, ...result }),
+        body: JSON.stringify({ submission_id: currentSubmissionId, ...result }),
       })
 
-      const json = await response.json()
+      const json = await response.json().catch(() => null)
       if (!response.ok || json.error) {
-        console.error('Submit failed', json.error)
+        const message = json?.error || 'Submit failed'
+        setSubmitError(message)
         return
       }
 
       setStatus('submitted')
+      setSubmitSuccessMessage('Report submitted successfully. Your entry has been received and is now available for admin review.')
     } catch (err) {
-      console.error('Submit exception', err)
+      setSubmitError(err instanceof Error ? err.message : 'Failed to submit')
     } finally {
       setIsSubmitting(false)
     }
@@ -176,6 +264,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
   const value = useMemo<SubmissionContextValue>(() => ({
     currentStep,
     totalSteps: STEP_FIELDS.length + 1,
+    stepCompletion,
     goNext,
     goPrev,
     goToStep,
@@ -184,8 +273,11 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     lastSavedAt,
     isSaving,
     isSubmitting,
+    stepError,
+    submitError,
+    submitSuccessMessage,
     handleFinalSubmit,
-  }), [currentStep, submissionId, status, lastSavedAt, isSaving, isSubmitting])
+  }), [currentStep, submissionId, status, lastSavedAt, isSaving, isSubmitting, stepError, submitError, submitSuccessMessage, stepCompletion])
 
   return (
     <SubmissionContext.Provider value={value}>

@@ -6,8 +6,8 @@ type CookieStore = {
   set: (name: string, value: string, options?: any) => void
 }
 
-export function createClient() {
-  const cookieStore = cookies() as unknown as CookieStore
+export async function createClient() {
+  const cookieStore = (await cookies()) as unknown as CookieStore
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

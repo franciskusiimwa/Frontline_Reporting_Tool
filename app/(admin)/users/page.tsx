@@ -64,7 +64,7 @@ export default function AdminUsersPage() {
       } else if (payload.data) {
         setUsers(payload.data)
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load users')
     } finally {
       setLoading(false)
@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
         setPage(1)
         await loadUsers()
       }
-    } catch (err) {
+    } catch {
       setActionMessage('Create failed: network error')
     }
   }
@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
         setEditingId(null)
         await loadUsers()
       }
-    } catch (err) {
+    } catch {
       setActionMessage('Update failed: network error')
     }
   }
@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
         setActionMessage('User deleted successfully.')
         await loadUsers()
       }
-    } catch (err) {
+    } catch {
       setActionMessage('Delete failed: network error')
     }
   }
@@ -217,7 +217,7 @@ export default function AdminUsersPage() {
         setActionMessage('Password reset successfully.')
         setResetPassword('')
       }
-    } catch (err) {
+    } catch {
       setActionMessage('Password reset failed: network error')
     }
   }

@@ -1,5 +1,4 @@
 import { type InputHTMLAttributes } from 'react'
-import clsx from 'clsx'
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const classes = `w-full h-10 rounded-md border border-gray-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500 ${props.className ?? ''}`.trim()

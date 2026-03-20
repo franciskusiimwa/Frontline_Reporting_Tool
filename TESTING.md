@@ -1,183 +1,61 @@
 # Testing Strategy
 
-This document outlines the testing approach for the PO Project.
+This document outlines the active test setup for the PO Project.
+
+## Active Test Stack
+
+- Unit tests: Vitest
+- Coverage: V8 coverage via `@vitest/coverage-v8`
+- Current test location: `tests/unit/`
 
 ## Test Structure
 
 ```
 tests/
-├── unit/
-│   ├── schemas.test.ts
-│   ├── utils.test.ts
-│   └── export-csv.test.ts
-├── integration/
-│   ├── api/
-│   │   └── submissions.test.ts
-│   └── flows/
-│       └── submission-flow.test.ts
-└── e2e/
-    └── submission.e2e.ts
+└── unit/
+  ├── schemas.test.ts
+  ├── rate-limit.test.ts
+  └── name-format.test.ts
 ```
 
 ## Running Tests
 
 ```bash
-# Install testing framework (if not already installed)
-npm install --save-dev @testing-library/react @testing-library/jest-dom jest @types/jest
+# Run all unit tests once
+npm run test
 
-# Run all tests
-npm test
+# Run in watch mode
+npm run test:watch
 
-# Run tests in watch mode
-npm test -- --watch
+# Run coverage
+npm run coverage
 
-# Run specific test file
-npm test -- schemas.test.ts
-
-# Generate coverage report
-npm test -- --coverage
+# Run lint + typecheck + tests (recommended before PR)
+npm run lint
+npm run typecheck
+npm run test
 ```
 
-## Unit Tests
+## What Is Currently Covered
 
-### Schemas (`lib/schemas.ts`)
+1. Schema validation for full submissions and drafts
+2. Rate limiter allow/deny behavior
+3. Name normalization utility correctness
 
-Test Zod schema validation:
+## Next Coverage Targets
 
-```typescript
-import { formDataSchema } from '@/lib/schemas'
-
-describe('formDataSchema', () => {
-  it('validates correct form data', () => {
-    const valid = {
-      field_name: 'John Doe',
-      week_id: '123',
-      status: 'submitted',
-    }
-    expect(() => formDataSchema.parse(valid)).not.toThrow()
-  })
-
-  it('rejects invalid data', () => {
-    const invalid = { field_name: '' }
-    expect(() => formDataSchema.parse(invalid)).toThrow()
-  })
-})
-```
-
-### Utils (`lib/utils.ts`)
-
-Test utility functions:
-
-```typescript
-import { classNames } from '@/lib/utils'
-
-describe('classNames', () => {
-  it('merges class names correctly', () => {
-    expect(classNames('px-2', 'py-1')).toBe('px-2 py-1')
-    expect(classNames('px-2', { 'bg-red': true })).toContain('bg-red')
-  })
-})
-```
-
-### Export Functions (`lib/export-csv.ts`, `lib/export-docx.ts`)
-
-```typescript
-import { generateCSV } from '@/lib/export-csv'
-
-describe('generateCSV', () => {
-  it('generates valid CSV format', () => {
-    const data = [{ id: '1', name: 'Test' }]
-    const csv = generateCSV(data)
-    expect(csv).toContain('id,name')
-  })
-})
-```
-
-## Integration Tests
-
-### API Routes
-
-Test API endpoints with mock Supabase:
-
-```typescript
-import { GET } from '@/app/api/submissions/route'
-
-describe('GET /api/submissions', () => {
-  it('returns submissions for authenticated user', async () => {
-    const request = new Request('http://localhost:3000/api/submissions')
-    const response = await GET(request)
-    expect(response.status).toBe(200)
-  })
-
-  it('returns 401 for unauthenticated request', async () => {
-    // Mock no auth
-    const response = await GET(new Request(...))
-    expect(response.status).toBe(401)
-  })
-})
-```
-
-## Component Tests
-
-Test React components:
-
-```typescript
-import { render, screen } from '@testing-library/react'
-import { Button } from '@/components/ui/Button'
-
-describe('Button Component', () => {
-  it('renders with text', () => {
-    render(<Button>Click me</Button>)
-    expect(screen.getByText('Click me')).toBeInTheDocument()
-  })
-
-  it('handles click events', () => {
-    const handleClick = jest.fn()
-    render(<Button onClick={handleClick}>Click</Button>)
-    screen.getByText('Click').click()
-    expect(handleClick).toHaveBeenCalled()
-  })
-})
-```
-
-## E2E Tests (Playwright recommended)
-
-```bash
-npm install --save-dev @playwright/test
-```
-
-Example E2E test:
-
-```typescript
-import { test, expect } from '@playwright/test'
-
-test('complete submission flow', async ({ page }) => {
-  await page.goto('http://localhost:3000/submit')
-  
-  // Fill form
-  await page.fill('input[name="field_name"]', 'Test Field')
-  await page.click('button:has-text("Next")')
-  
-  // Verify redirect
-  await expect(page).toHaveURL('/submit?step=2')
-})
-```
+1. API integration tests for `/api/submit`, `/api/draft`, `/api/submissions/[id]/approve`
+2. Middleware auth-routing tests (admin vs field_staff)
+3. RLS behavior tests in Supabase test environment
+4. End-to-end submission and admin approval flow
 
 ## Test Configuration
 
-Create `jest.config.js`:
+Vitest configuration lives in `vitest.config.ts` and uses:
 
-```javascript
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  roots: ['<rootDir>/tests'],
-  testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-  },
-}
-```
+- Node test environment
+- `@/` path alias resolution
+- V8 coverage output in `/coverage`
 
 ## Coverage Goals
 
@@ -200,7 +78,7 @@ open coverage/lcov-report/index.html
 
 ## CI/CD Integration
 
-Tests run on every PR via GitHub Actions (see `.github/workflows/ci-cd.yml`).
+Unit tests and typecheck run in CI for every PR and protected-branch push via `.github/workflows/ci-cd.yml`.
 
 ## Testing Best Practices
 

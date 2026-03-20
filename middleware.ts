@@ -35,12 +35,25 @@ export async function middleware(request: NextRequest) {
       .single()
 
     const role = profile?.role
+    const hasValidRole = role === 'admin' || role === 'field_staff'
+    const isAdminRoute = path.startsWith('/admin') || path.startsWith('/submissions') || path.startsWith('/users')
+    const isFieldRoute = path.startsWith('/submit') || path.startsWith('/history')
 
-    if (path.startsWith('/admin') && role !== 'admin') {
+    if (!hasValidRole) {
+      // Avoid redirect loops when a user exists but profile/role is missing.
+      if (path !== '/login') {
+        const loginUrl = new URL('/login', request.url)
+        loginUrl.searchParams.set('error', 'profile_missing')
+        return NextResponse.redirect(loginUrl)
+      }
+      return supabaseResponse
+    }
+
+    if (isAdminRoute && role !== 'admin') {
       return NextResponse.redirect(new URL('/submit', request.url))
     }
 
-    if ((path.startsWith('/submit') || path.startsWith('/history')) && role !== 'field_staff') {
+    if (isFieldRoute && role !== 'field_staff') {
       return NextResponse.redirect(new URL('/admin', request.url))
     }
 

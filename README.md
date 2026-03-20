@@ -29,12 +29,11 @@ This is an **internal reporting platform** for Educate! Uganda field staff.
 ✅ Fill out a **9-step weekly form** with metrics and insights  
 ✅ **Save as draft** to complete later  
 ✅ **Submit final** submission to admin for review  
-✅ See **revision requests** if admin needs clarification  
 ✅ View **past submissions** and status history  
 
 ### For Admins:
 ✅ See **all submissions** from all field staff  
-✅ **Approve** submissions or request revisions  
+✅ **Approve** submissions  
 ✅ View **dashboard** with summary statistics  
 ✅ **Export data** to CSV for analysis  
 ✅ **Manage users** (create, update roles)  
@@ -204,6 +203,10 @@ npm start            # Run production server
 
 # Code Quality
 npm run lint         # Check TypeScript & code style
+npm run typecheck    # Run strict TypeScript compile checks
+npm run test         # Run unit test suite (Vitest)
+npm run coverage     # Generate test coverage report
+npm run validate:env # Validate required runtime environment variables
 
 # Database
 supabase migration up    # Run database migrations
@@ -247,15 +250,16 @@ The backend provides these main endpoints:
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/auth/register` | POST | Create new user |
-| `/api/draft` | POST | Save form as draft |
+| `/api/draft` | PATCH | Save form as draft |
 | `/api/submit` | POST | Submit form (final) |
 | `/api/submissions` | GET | List all submissions (admin) |
 | `/api/submissions/[id]` | GET | Get one submission |
-| `/api/submissions/[id]/approve` | POST | Approve submission (admin) |
-| `/api/submissions/[id]/revise` | POST | Request revision (admin) |
-| `/api/export/csv` | POST | Export to CSV (admin) |
+| `/api/submissions/[id]/approve` | PATCH | Approve submission (admin) |
+| `/api/submissions/[id]/revise` | PATCH | Revision requests disabled (returns 403) |
+| `/api/export/csv` | GET | Export to CSV (admin) |
 | `/api/users` | GET/POST | Manage users (admin) |
 | `/api/dashboard` | GET | Dashboard stats (admin) |
+| `/api/health` | GET | Runtime + database health check |
 
 **Full API docs** → [API.md](API.md)
 
@@ -451,3 +455,6 @@ Private project for Educate! Uganda
 ---
 
 **Last Updated**: 2026-03-20
+#   F r o n t l i n e _ R e p o r t i n g _ T o o l 
+ 
+ 

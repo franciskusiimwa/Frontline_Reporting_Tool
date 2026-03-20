@@ -8,19 +8,22 @@
 |--------|----------|---------|----------------|
 | POST | `/api/auth/register` | Create new user | None (admin only in practice) |
 | GET | `/api/dashboard` | Get dashboard stats | Admin |
-| POST | `/api/draft` | Save form as draft | Field staff |
+| PATCH | `/api/draft` | Save form as draft | Field staff |
 | GET | `/api/submissions` | List all submissions | Admin |
 | GET | `/api/submissions/[id]` | Get one submission | Owner or Admin |
-| POST | `/api/submissions/[id]/approve` | Approve submission | Admin |
-| POST | `/api/submissions/[id]/revise` | Request revision | Admin |
+| PATCH | `/api/submissions/[id]/approve` | Approve submission | Admin |
+| PATCH | `/api/submissions/[id]/revise` | Revision requests disabled (returns 403) | Admin |
 | POST | `/api/submissions/[id]/summarize` | Get AI summary | Admin |
-| POST | `/api/submissions/[id]/export` | Export single submission | Admin |
+| GET | `/api/submissions/[id]/export` | Export single submission | Admin |
 | POST | `/api/submit` | Final form submission | Field staff |
-| POST | `/api/export/csv` | Export all data to CSV | Admin |
+| GET | `/api/export/csv` | Export all data to CSV | Admin |
 | GET | `/api/users` | List all users | Admin |
 | POST | `/api/users` | Create new user | Admin |
-| PUT | `/api/users/[id]` | Update user | Admin |
+| PATCH | `/api/users/[id]` | Update user | Admin |
+| POST | `/api/users/[id]` | Reset user password | Admin |
+| DELETE | `/api/users/[id]` | Delete user | Admin |
 | GET | `/api/weeks` | Get current week | Authenticated |
+| GET | `/api/health` | Runtime + DB health check | None |
 
 ---
 
@@ -78,7 +81,7 @@ Create a new user account.
 
 ### 2. Draft Saving
 
-#### `POST /api/draft`
+#### `PATCH /api/draft`
 
 Save form in progress (doesn't finalize).
 

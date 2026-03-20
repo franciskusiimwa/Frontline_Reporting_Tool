@@ -1,4 +1,4 @@
-import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, WidthType, BorderStyle, TextRun } from 'docx'
+import { Document, HeadingLevel, Packer, Paragraph } from 'docx'
 import { format } from 'date-fns'
 import type { Submission } from './types'
 

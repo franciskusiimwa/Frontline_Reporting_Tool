@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type SubmissionStatus = 'draft' | 'submitted' | 'revision_requested' | 'approved'
 
@@ -27,6 +27,8 @@ export default function AdminSubmissionsPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
+  const [summaryOutput, setSummaryOutput] = useState<string | null>(null)
+  const [groupBy, setGroupBy] = useState<'all' | 'region' | 'week' | 'status'>('all')
 
   const fetchData = async () => {
     setLoading(true)
@@ -41,7 +43,7 @@ export default function AdminSubmissionsPage() {
         setSubmissions(payload.data?.submissions ?? [])
         setTotal(payload.data?.total ?? 0)
       }
-    } catch (err) {
+    } catch {
       setError('Failed to fetch submissions')
     } finally {
       setLoading(false)
@@ -79,6 +81,7 @@ export default function AdminSubmissionsPage() {
 
   const doSummarize = async (id: string) => {
     setActionMsg(null)
+    setSummaryOutput(null)
     try {
       const res = await fetch(`/api/submissions/${id}/summarize`, {
         method: 'POST',
@@ -89,10 +92,32 @@ export default function AdminSubmissionsPage() {
       if (json.error) {
         setActionMsg(`Summarize failed: ${json.error}`)
       } else {
-        setActionMsg(`Summary: ${json.data?.summary ?? 'no summary'}`)
+        setSummaryOutput(json.data?.summary ?? 'No summary generated.')
+        setActionMsg('Single response summary generated.')
       }
     } catch (err) {
       setActionMsg(`Summarize error: ${(err as Error).message}`)
+    }
+  }
+
+  const doGroupSummary = async () => {
+    setActionMsg(null)
+    setSummaryOutput(null)
+    try {
+      const res = await fetch('/api/submissions/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupBy, submissionIds: submissions.map((s) => s.id) }),
+      })
+      const json = (await res.json()) as ApiResponse<{ summary: string }>
+      if (json.error) {
+        setActionMsg(`Group summarize failed: ${json.error}`)
+      } else {
+        setSummaryOutput(json.data?.summary ?? 'No summary generated.')
+        setActionMsg('Grouped summary generated successfully.')
+      }
+    } catch (err) {
+      setActionMsg(`Group summarize error: ${(err as Error).message}`)
     }
   }
 
@@ -106,8 +131,24 @@ export default function AdminSubmissionsPage() {
       </div>
 
       <p className="text-sm text-gray-600">Listing {total} submissions.</p>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <select
+          className="rounded border px-2 py-1 text-sm"
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value as 'all' | 'region' | 'week' | 'status')}
+        >
+          <option value="all">Group summary: all loaded submissions</option>
+          <option value="region">Group summary: by region</option>
+          <option value="week">Group summary: by week</option>
+          <option value="status">Group summary: by status</option>
+        </select>
+        <button onClick={() => void doGroupSummary()} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white">Generate Group Summary</button>
+      </div>
       {actionMsg && <p className="my-2 text-sm text-indigo-700">{actionMsg}</p>}
       {error && <p className="my-2 text-sm text-red-600">{error}</p>}
+      {summaryOutput && (
+        <pre className="my-3 whitespace-pre-wrap rounded-lg border border-gray-200 bg-white p-4 text-xs text-gray-700">{summaryOutput}</pre>
+      )}
 
       {loading ? (
         <p>Loading...</p>
@@ -136,9 +177,9 @@ export default function AdminSubmissionsPage() {
                   <td className="border p-2">{s.profile?.full_name ?? s.submitted_by ?? '—'}</td>
                   <td className="border p-2 space-x-1">
                     <button onClick={() => void doAction(s.id, 'approve')} className="rounded bg-emerald-500 px-2 py-1 text-white text-xs">Approve</button>
-                    <button onClick={() => void doAction(s.id, 'revise', { note: 'Revision requested from admin.' })} className="rounded bg-orange-500 px-2 py-1 text-white text-xs">Revise</button>
                     <button onClick={() => void doSummarize(s.id)} className="rounded bg-blue-400 px-2 py-1 text-white text-xs">Summarize</button>
-                    <a className="rounded bg-gray-600 px-2 py-1 text-white text-xs" href={`/api/submissions/${s.id}/export`} target="_blank" rel="noreferrer">Export</a>
+                    <a className="rounded bg-slate-700 px-2 py-1 text-white text-xs" href={`/api/submissions/${s.id}/export?format=csv`} target="_blank" rel="noreferrer">Export CSV</a>
+                    <a className="rounded bg-slate-900 px-2 py-1 text-white text-xs" href={`/api/submissions/${s.id}/export?format=pdf`} target="_blank" rel="noreferrer">Export PDF</a>
                   </td>
                 </tr>
               ))}

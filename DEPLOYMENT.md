@@ -6,6 +6,8 @@ This document outlines the process for deploying the PO Project (EXP Weekly Regi
 
 - [ ] All tests pass locally (`npm run build`)
 - [ ] Linting passes (`npm run lint`)
+- [ ] Type checking passes (`npm run typecheck`)
+- [ ] Unit tests pass (`npm run test`)
 - [ ] Environment variables are configured in `.env.local`
 - [ ] Database migrations are up-to-date
 - [ ] Security review completed
@@ -21,6 +23,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
+UPSTASH_REDIS_REST_URL=your-upstash-rest-url
+UPSTASH_REDIS_REST_TOKEN=your-upstash-rest-token
 NODE_ENV=production
 ```
 
@@ -34,6 +38,12 @@ npm ci
 
 # Run linting
 npm run lint
+
+# Run type checks
+npm run typecheck
+
+# Run unit tests
+npm run test
 
 # Build optimized production bundle
 npm run build
@@ -58,6 +68,22 @@ npm start
    npm install -g vercel
    vercel --prod
    ```
+
+### CI/CD Pipeline (GitHub Actions)
+
+The project includes automated CI and deployment in `.github/workflows/ci-cd.yml`:
+
+1. Lint + typecheck + tests + build
+2. Security audit (`npm audit`)
+3. Staging deploy (on `staging` branch pushes)
+4. Production deploy (on `main` branch pushes)
+5. Post-deploy health check (`/api/health`) for staging and production
+
+Required GitHub repository secrets:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
 
 ### Option 2: Netlify
 
@@ -107,10 +133,11 @@ npm start
 
 ## Post-Deployment Validation
 
+0. **Health check**: Verify `/api/health` returns 200
 1. **Health Check**: Verify all pages load
 2. **Authentication**: Test login/logout flow
 3. **Form Submission**: Test full workflow (submit → review → approve)
-4. **Exports**: Verify CSV/DOCX export functionality
+4. **Exports**: Verify CSV/PDF export functionality
 5. **Admin Dashboard**: Check dashboard loads and displays data
 6. **Performance**: Run Lighthouse audit
 7. **Error Handling**: Trigger sample error and verify error boundary

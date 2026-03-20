@@ -16,12 +16,14 @@ const STEP_LABELS = [
 ]
 
 export function StepperNav() {
-  const { currentStep, goToStep } = useSubmission()
+  const { currentStep, stepCompletion, goToStep } = useSubmission()
 
   return (
     <nav className="flex items-center justify-between overflow-x-auto py-3">
       {STEP_LABELS.map((label, index) => {
-        const status = index < currentStep ? 'completed' : index === currentStep ? 'current' : 'upcoming'
+        const isCompleted = Boolean(stepCompletion[index])
+        const needsAttention = index < currentStep && !isCompleted
+        const status = index === currentStep ? 'current' : isCompleted ? 'completed' : needsAttention ? 'needs_attention' : 'upcoming'
 
         return (
           <button
@@ -33,6 +35,8 @@ export function StepperNav() {
                 ? 'bg-teal-600 text-white'
                 : status === 'completed'
                 ? 'bg-teal-100 text-teal-700'
+                : status === 'needs_attention'
+                ? 'bg-amber-100 text-amber-800'
                 : 'bg-gray-100 text-gray-500'
             }`}
             aria-current={status === 'current' ? 'step' : undefined}

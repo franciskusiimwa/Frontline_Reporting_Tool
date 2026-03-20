@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { ApiResponse } from '@/lib/types'
+import { ApiResponse, AuditLogEntry, Submission } from '@/lib/types'
+import { logServerError } from '@/lib/server-log'
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
     if (userError || !userData?.user) {
@@ -35,9 +36,15 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
       .eq('submission_id', id)
       .order('created_at', { ascending: false })
 
-    return NextResponse.json<ApiResponse<{ submission: any; audit_log: any[] }>>({ data: { submission: submissionRes.data, audit_log: auditRes.data ?? [] }, error: null }, { status: 200 })
+    return NextResponse.json<ApiResponse<{ submission: Submission; audit_log: AuditLogEntry[] }>>({
+      data: {
+        submission: submissionRes.data as Submission,
+        audit_log: (auditRes.data ?? []) as AuditLogEntry[],
+      },
+      error: null,
+    }, { status: 200 })
   } catch (err) {
-    console.error('GET /api/submissions/[id] error', err)
+    logServerError('GET /api/submissions/[id] error', err)
     return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Failed to fetch submission' }, { status: 500 })
   }
 }

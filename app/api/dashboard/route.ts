@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { DashboardData, ApiResponse } from '@/lib/types'
+import { logServerError } from '@/lib/server-log'
 
 let dashboardCache: { key: string; expiresAt: number; data: DashboardData } | null = null
 
@@ -9,13 +10,13 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
   if (dashboardCache && dashboardCache.key === cacheKey && dashboardCache.expiresAt > Date.now()) {
     return dashboardCache.data
   }
-  const supabase = createClient()
+  const supabase = await createClient()
   let query = supabase.from('submissions').select('region, week_label, status, data').in('status', ['submitted', 'approved'])
   if (region) query = query.eq('region', region)
 
   const { data, error } = await query
   if (error) {
-    console.error('Dashboard query error', error)
+    logServerError('Dashboard query error', error)
     return {
       retention_trend: [],
       regional_comparison: [],
@@ -106,7 +107,7 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
 
 export async function GET(request: Request) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData?.user) {
       return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Unauthorized' }, { status: 401 })
@@ -123,7 +124,8 @@ export async function GET(request: Request) {
     const data = await getDashboardData(region)
     return NextResponse.json<ApiResponse<typeof data>>({ data, error: null }, { status: 200 })
   } catch (err) {
-    console.error('GET /api/dashboard error', err)
+    logServerError('GET /api/dashboard error', err)
     return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Failed to fetch dashboard data' }, { status: 500 })
   }
 }
+

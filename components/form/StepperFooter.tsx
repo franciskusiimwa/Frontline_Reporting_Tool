@@ -5,7 +5,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { Button } from '@/components/ui/Button'
 
 export function StepperFooter() {
-  const { currentStep, totalSteps, goPrev, goNext, status, lastSavedAt, isSaving, isSubmitting, handleFinalSubmit } = useSubmission()
+  const { currentStep, totalSteps, goPrev, goNext, lastSavedAt, isSaving, isSubmitting, handleFinalSubmit } = useSubmission()
 
   const lastSavedText = lastSavedAt ? formatDistanceToNow(lastSavedAt, { addSuffix: true }) : 'Not saved yet'
 
