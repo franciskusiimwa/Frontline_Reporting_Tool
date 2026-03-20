@@ -2,26 +2,27 @@ import { z } from 'zod'
 
 const trafficLight = z.enum(['on_track', 'at_risk', 'off_track'])
 const severity = z.enum(['H', 'M', 'L'])
+const requiredText = (message = 'Required') => z.string().trim().min(1, message)
 
 const scholarRetentionSchema = z.object({
   last_week: z.number().min(0),
   this_week: z.number().min(0),
   retention_rate: z.number().min(0).max(100),
-  insight: z.string().min(1, 'Insight is required'),
+  insight: requiredText('Insight is required'),
 })
 
 const mentorRetentionSchema = z.object({
   last_week: z.number().min(0),
   this_week: z.number().min(0),
   retention_rate: z.number().min(0).max(100),
-  insight: z.string().min(1, 'Insight is required'),
+  insight: requiredText('Insight is required'),
 })
 
 const passbookSchema = z.object({
   mentors_started: z.number().min(0),
   pct_scholars_reached: z.number().min(0).max(100),
   avg_scholars_per_mentor: z.number().min(0),
-  insight: z.string().min(1, 'Insight is required'),
+  insight: requiredText('Insight is required'),
 })
 
 const classCompositionSchema = z.object({
@@ -35,7 +36,7 @@ const classCompositionSchema = z.object({
 const classSizeSchema = z.object({
   avg_scholars: z.number().min(0),
   avg_non_scholars: z.number().min(0),
-  insight: z.string().min(1, 'Insight is required'),
+  insight: requiredText('Insight is required'),
 })
 
 const deepDiveSchema = z.object({
@@ -47,29 +48,29 @@ const deepDiveSchema = z.object({
 
 const priorityRowSchema = z.object({
   label: z.string(),
-  planned: z.string().min(1, 'Required'),
-  actual: z.string().min(1, 'Required'),
+  planned: requiredText('Required'),
+  actual: requiredText('Required'),
   status: trafficLight,
-  insight: z.string().min(1, 'Required'),
+  insight: requiredText('Required'),
 })
 
 const riskRowSchema = z.object({
-  description: z.string().min(1, 'Required'),
+  description: requiredText('Required'),
   severity,
-  root_cause: z.string().min(1, 'Required'),
-  mitigation: z.string().min(1, 'Required'),
+  root_cause: requiredText('Required'),
+  mitigation: requiredText('Required'),
   support_needed: z.string(),
 })
 
 export const formDataSchema = z.object({
-  region: z.string().min(1),
-  po_names: z.string().min(1),
-  week_label: z.string().min(1),
-  submission_date: z.string().min(1),
+  region: requiredText(),
+  po_names: requiredText(),
+  week_label: requiredText(),
+  submission_date: requiredText(),
 
   overall_status: trafficLight,
-  top_win: z.string().min(1, 'Required'),
-  top_challenge: z.string().min(1, 'Required'),
+  top_win: requiredText('Required'),
+  top_challenge: requiredText('Required'),
   confidence_next_week: z.union([
     z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)
   ]),
@@ -83,9 +84,9 @@ export const formDataSchema = z.object({
 
   priorities: z.tuple([priorityRowSchema, priorityRowSchema, priorityRowSchema]),
 
-  mentor_insights: z.string().min(1, 'Required'),
-  scholar_insights: z.string().min(1, 'Required'),
-  foa_insights: z.string().min(1, 'Required'),
+  mentor_insights: requiredText('Required'),
+  scholar_insights: requiredText('Required'),
+  foa_insights: requiredText('Required'),
 
   risks: z.array(riskRowSchema).min(1, 'Add at least one risk'),
 
@@ -94,12 +95,12 @@ export const formDataSchema = z.object({
   additional_support: z.string(),
 
   next_week_priorities: z.tuple([
-    z.string().min(1), z.string().min(1), z.string().min(1)
+    requiredText(), requiredText(), requiredText()
   ]),
-  next_week_rationale: z.string().min(1, 'Required'),
+  next_week_rationale: requiredText('Required'),
 
-  what_worked: z.string().min(1, 'Required'),
-  what_didnt: z.string().min(1, 'Required'),
+  what_worked: requiredText('Required'),
+  what_didnt: requiredText('Required'),
 })
 
 export const draftSchema = formDataSchema.partial()
