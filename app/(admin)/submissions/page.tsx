@@ -18,30 +18,43 @@ type ApiResponse<T> =
   | { data: T; error: null }
   | { data: null; error: string }
 
+type SubmissionsListResponse = {
+  submissions: SubmissionRow[]
+  total: number
+  nextCursor: string | null
+}
+
 const PAGE_SIZE = 15
 
 export default function AdminSubmissionsPage() {
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [summaryOutput, setSummaryOutput] = useState<string | null>(null)
   const [groupBy, setGroupBy] = useState<'all' | 'region' | 'week' | 'status'>('all')
 
-  const fetchData = async () => {
+  const fetchData = async (cursorValue: string | null = cursor) => {
     setLoading(true)
     setError(null)
     try {
-      const resp = await fetch(`/api/submissions?page=${page}&limit=${PAGE_SIZE}`)
-      const payload = (await resp.json()) as ApiResponse<{ submissions: SubmissionRow[]; total: number }>
+      const params = new URLSearchParams({ limit: String(PAGE_SIZE) })
+      if (cursorValue) params.set('cursor', cursorValue)
+
+      const resp = await fetch(`/api/submissions?${params.toString()}`)
+      const payload = (await resp.json()) as ApiResponse<SubmissionsListResponse>
       if (payload.error) {
         setError(payload.error)
         setSubmissions([])
+        setNextCursor(null)
       } else {
         setSubmissions(payload.data?.submissions ?? [])
         setTotal(payload.data?.total ?? 0)
+        setNextCursor(payload.data?.nextCursor ?? null)
       }
     } catch {
       setError('Failed to fetch submissions')
@@ -51,12 +64,15 @@ export default function AdminSubmissionsPage() {
   }
 
   useEffect(() => {
-    void fetchData()
-  }, [page])
+    void fetchData(cursor)
+  }, [cursor])
 
   const reload = async () => {
-    setPage(1)
-    await fetchData()
+    setCursorHistory([])
+    setCursor(null)
+    if (cursor === null) {
+      await fetchData(null)
+    }
   }
 
   const doAction = async (id: string, endpoint: string, payload?: object) => {
@@ -71,8 +87,8 @@ export default function AdminSubmissionsPage() {
       if (json.error) {
         setActionMsg(`Action failed: ${json.error}`)
       } else {
-        setActionMsg(`Action ${endpoint} successful`) 
-        await fetchData()
+        setActionMsg(`Action ${endpoint} successful`)
+        await fetchData(cursor)
       }
     } catch (err) {
       setActionMsg(`Action error: ${(err as Error).message}`)
@@ -121,7 +137,21 @@ export default function AdminSubmissionsPage() {
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const pageNumber = cursorHistory.length + 1
+
+  const goNext = () => {
+    if (!nextCursor) return
+    setCursorHistory((prev) => [...prev, cursor])
+    setCursor(nextCursor)
+  }
+
+  const goPrev = () => {
+    if (cursorHistory.length === 0) return
+
+    const previousCursor = cursorHistory[cursorHistory.length - 1] ?? null
+    setCursorHistory((prev) => prev.slice(0, -1))
+    setCursor(previousCursor)
+  }
 
   return (
     <section>
@@ -130,7 +160,7 @@ export default function AdminSubmissionsPage() {
         <button onClick={reload} className="rounded border px-3 py-1 text-sm">Refresh</button>
       </div>
 
-      <p className="text-sm text-gray-600">Listing {total} submissions.</p>
+      <p className="text-sm text-gray-600">Listing {total} submissions. Page size: {PAGE_SIZE}.</p>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select
           className="rounded border px-2 py-1 text-sm"
@@ -176,7 +206,7 @@ export default function AdminSubmissionsPage() {
                   <td className="border p-2">{s.submitted_at ? new Date(s.submitted_at).toLocaleString() : 'N/A'}</td>
                   <td className="border p-2">{s.profile?.full_name ?? s.submitted_by ?? '—'}</td>
                   <td className="border p-2 space-x-1">
-                    <button onClick={() => void doAction(s.id, 'approve')} className="rounded bg-emerald-500 px-2 py-1 text-white text-xs">Approve</button>
+                    <button onClick={() => void doAction(s.id, 'approve')} disabled={s.status !== 'submitted'} className="rounded bg-emerald-500 px-2 py-1 text-white text-xs disabled:cursor-not-allowed disabled:opacity-50">Approve</button>
                     <button onClick={() => void doSummarize(s.id)} className="rounded bg-blue-400 px-2 py-1 text-white text-xs">Summarize</button>
                     <a className="rounded bg-slate-700 px-2 py-1 text-white text-xs" href={`/api/submissions/${s.id}/export?format=csv`} target="_blank" rel="noreferrer">Export CSV</a>
                     <a className="rounded bg-slate-900 px-2 py-1 text-white text-xs" href={`/api/submissions/${s.id}/export?format=pdf`} target="_blank" rel="noreferrer">Export PDF</a>
@@ -189,9 +219,9 @@ export default function AdminSubmissionsPage() {
       )}
 
       <div className="mt-3 flex items-center justify-between text-sm">
-        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded border px-2 py-1 disabled:opacity-50">Prev</button>
-        <span>Page {page} of {totalPages}</span>
-        <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded border px-2 py-1 disabled:opacity-50">Next</button>
+        <button onClick={goPrev} disabled={cursorHistory.length === 0} className="rounded border px-2 py-1 disabled:opacity-50">Prev</button>
+        <span>Page {pageNumber}</span>
+        <button onClick={goNext} disabled={!nextCursor} className="rounded border px-2 py-1 disabled:opacity-50">Next</button>
       </div>
     </section>
   )

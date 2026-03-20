@@ -18,31 +18,58 @@ type ApiResponse<T> =
   | { data: T; error: null }
   | { data: null; error: string }
 
+type SubmissionsListResponse = {
+  submissions: SubmissionRow[]
+  total: number
+  nextCursor: string | null
+}
+
 export default function FieldHistoryPage() {
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
 
-  useEffect(() => {
-    const fetchHistory = async () => {
+  const fetchHistory = async (cursor?: string | null) => {
+    const isLoadMore = Boolean(cursor)
+
+    if (isLoadMore) {
+      setLoadingMore(true)
+    } else {
       setLoading(true)
-      setError(null)
-      try {
-        const resp = await fetch('/api/submissions?limit=50')
-        const payload = (await resp.json()) as ApiResponse<{ submissions: SubmissionRow[]; total: number }>
-        if (payload.error) {
-          setError(payload.error)
+    }
+
+    setError(null)
+
+    try {
+      const params = new URLSearchParams({ limit: '25' })
+      if (cursor) params.set('cursor', cursor)
+
+      const resp = await fetch(`/api/submissions?${params.toString()}`)
+      const payload = (await resp.json()) as ApiResponse<SubmissionsListResponse>
+      if (payload.error) {
+        setError(payload.error)
+        if (!isLoadMore) {
           setSubmissions([])
-        } else {
-          setSubmissions(payload.data?.submissions ?? [])
         }
-      } catch {
-        setError('Failed to load submission history.')
-      } finally {
+      } else {
+        const rows = payload.data?.submissions ?? []
+        setSubmissions((prev) => (isLoadMore ? [...prev, ...rows] : rows))
+        setNextCursor(payload.data?.nextCursor ?? null)
+      }
+    } catch {
+      setError('Failed to load submission history.')
+    } finally {
+      if (isLoadMore) {
+        setLoadingMore(false)
+      } else {
         setLoading(false)
       }
     }
+  }
 
+  useEffect(() => {
     void fetchHistory()
   }, [])
 
@@ -80,6 +107,18 @@ export default function FieldHistoryPage() {
               </div>
             </article>
           ))}
+
+          {nextCursor && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => void fetchHistory(nextCursor)}
+                disabled={loadingMore}
+                className="rounded border px-4 py-2 text-sm disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading more...' : 'Load more'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>

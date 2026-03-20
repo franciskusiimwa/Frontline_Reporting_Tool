@@ -4,6 +4,7 @@ import { formDataSchema } from '@/lib/schemas'
 import { ApiResponse } from '@/lib/types'
 import { assertRateLimit } from '@/lib/rate-limit'
 import { logServerError } from '@/lib/server-log'
+import { submitSubmission } from '@/lib/services/submissions'
 
 export async function POST(request: Request) {
   try {
@@ -33,36 +34,14 @@ export async function POST(request: Request) {
       return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Submission data is invalid. Please complete required fields and try again.' }, { status: 400 })
     }
 
-    const sub = await supabase
-      .from('submissions')
-      .select('*, submitted_by_profile:profiles(full_name, region)')
-      .eq('id', submission_id)
-      .single()
+    const result = await submitSubmission(supabase, submission_id, validate.data)
+    if (!result.ok) {
+      if (result.status >= 500) {
+        logServerError('Submit RPC error', { submissionId: submission_id, status: result.status, error: result.error })
+      }
 
-    if (sub.error) {
-      logServerError('Submit lookup error', sub.error)
-      return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Submission not found' }, { status: 404 })
+      return NextResponse.json<ApiResponse<null>>({ data: null, error: result.error }, { status: result.status })
     }
-
-    if (sub.data.submitted_by !== userData.user.id) {
-      return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Forbidden' }, { status: 403 })
-    }
-
-    if (sub.data.status === 'submitted' || sub.data.status === 'approved') {
-      return NextResponse.json<ApiResponse<null>>({ data: null, error: 'This report has already been submitted.' }, { status: 409 })
-    }
-
-    const { error: updateError } = await supabase
-      .from('submissions')
-      .update({ data: validate.data, status: 'submitted', submitted_at: new Date().toISOString() })
-      .eq('id', submission_id)
-
-    if (updateError) {
-      logServerError('Submit update error', updateError)
-      return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Failed to submit' }, { status: 500 })
-    }
-
-    await supabase.from('audit_log').insert({ submission_id, actor_id: userData.user.id, action: 'submitted', note: 'Final submission' })
 
     return NextResponse.json<ApiResponse<{ submission_id: string }>>({ data: { submission_id }, error: null }, { status: 200 })
   } catch (err) {

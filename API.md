@@ -9,7 +9,7 @@
 | POST | `/api/auth/register` | Create new user | None (admin only in practice) |
 | GET | `/api/dashboard` | Get dashboard stats | Admin |
 | PATCH | `/api/draft` | Save form as draft | Field staff |
-| GET | `/api/submissions` | List all submissions | Admin |
+| GET | `/api/submissions` | List submissions | Admin or Field staff |
 | GET | `/api/submissions/[id]` | Get one submission | Owner or Admin |
 | PATCH | `/api/submissions/[id]/approve` | Approve submission | Admin |
 | PATCH | `/api/submissions/[id]/revise` | Revision requests disabled (returns 403) | Admin |
@@ -157,10 +157,10 @@ Finalize form submission (marks as submitted).
 
 **What happens**:
 1. Validates all form data with strict schema
-2. Checks user is form owner
-3. Changes status: `draft` → `submitted`
-4. Records timestamp (submitted_at)
-5. Creates audit_log entry
+2. Calls the `submit_submission` PostgreSQL RPC
+3. The database transaction verifies ownership and current state
+4. Changes status: `draft` → `submitted`
+5. Records timestamp and audit_log entry atomically
 6. Cannot edit after this
 
 **Error Codes**:
@@ -177,18 +177,24 @@ Finalize form submission (marks as submitted).
 
 #### `GET /api/submissions`
 
-Fetch all submissions (admin only).
+Fetch submissions for the current user.
 
-**Who can use**: Admin only
+**Who can use**:
+- Admins: all submissions
+- Field staff: their own submissions only
 
 **Query Parameters**:
 - `week_label` (optional): Filter by week
 - `status` (optional): Filter by status (draft, submitted, approved)
 - `region` (optional): Filter by region
+- `limit` (optional): Page size, max 100
+- `cursor` (optional): Opaque cursor from the previous response
 
 **Examples**:
 ```
 GET /api/submissions
+GET /api/submissions?limit=15
+GET /api/submissions?cursor=eyJjcmVhdGVkQXQiOiIyMDI2LTAzLTIxVDEwOjMwOjAwWiJ9&limit=15
 GET /api/submissions?week_label=Term%202,%20Week%205
 GET /api/submissions?status=approved
 GET /api/submissions?region=Central
@@ -197,31 +203,33 @@ GET /api/submissions?region=Central
 **Response (Success - 200)**:
 ```json
 {
-  "data": [
-    {
-      "id": "uuid-500",
-      "submitted_by": "uuid-user-123",
-      "full_name": "John Musoke",
-      "region": "Central",
-      "week_label": "Term 2, Week 5",
-      "status": "submitted",
-      "submitted_at": "2026-03-21T10:30:00Z",
-      "data": { "step1": {...}, "step2": {...} }
-    },
-    {
-      "id": "uuid-501",
-      "submitted_by": "uuid-user-456",
-      "full_name": "Sarah Opiyo",
-      "region": "North",
-      "week_label": "Term 2, Week 5",
-      "status": "draft",
-      "submitted_at": null,
-      "data": {...}
-    }
-  ],
+  "data": {
+    "submissions": [
+      {
+        "id": "uuid-500",
+        "submitted_by": "uuid-user-123",
+        "region": "Central",
+        "week_label": "Term 2, Week 5",
+        "status": "submitted",
+        "submitted_at": "2026-03-21T10:30:00Z",
+        "data": { "step1": {}, "step2": {} },
+        "profile": {
+          "full_name": "John Musoke",
+          "region": "Central"
+        }
+      }
+    ],
+    "total": 156,
+    "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTAzLTIxVDEwOjMwOjAwWiJ9"
+  },
   "error": null
 }
 ```
+
+**Notes**:
+- Omit `cursor` to fetch the first page.
+- Use `nextCursor` from the previous response to fetch the next page.
+- When `nextCursor` is `null`, there are no more results.
 
 **Code location**: `app/api/submissions/route.ts`
 
@@ -283,7 +291,7 @@ GET /api/submissions/uuid-500
 
 ### 6. Approve Submission
 
-#### `POST /api/submissions/[id]/approve`
+#### `PATCH /api/submissions/[id]/approve`
 
 Admin approves a submitted form.
 
@@ -291,33 +299,25 @@ Admin approves a submitted form.
 
 **URL Example**:
 ```
-POST /api/submissions/uuid-500/approve
-```
-
-**Request**:
-```json
-{
-  "note": "Looks good, well done!"
-}
+PATCH /api/submissions/uuid-500/approve
 ```
 
 **Response (Success - 200)**:
 ```json
 {
   "data": {
-    "submission_id": "uuid-500",
-    "new_status": "approved"
+    "submissionId": "uuid-500"
   },
   "error": null
 }
 ```
 
 **What happens**:
-1. Checks user is admin
-2. Finds the submission
-3. Changes status: `submitted` → `approved`
-4. Logs action in audit_log
-5. Field staff gets notification (in future)
+1. Checks the caller is authenticated
+2. Calls the `approve_submission` PostgreSQL RPC
+3. The database transaction verifies the caller is an admin and the submission is in `submitted` state
+4. Changes status: `submitted` → `approved`
+5. Writes the audit log entry atomically
 
 **Code location**: `app/api/submissions/[id]/approve/route.ts`
 
@@ -325,40 +325,28 @@ POST /api/submissions/uuid-500/approve
 
 ### 7. Request Revision
 
-#### `POST /api/submissions/[id]/revise`
+#### `PATCH /api/submissions/[id]/revise`
 
-Admin asks field staff to make changes.
+Revision requests are disabled.
 
-**Who can use**: Admin only
+**Who can use**: Admin only, but the endpoint always returns `403`
 
 **URL Example**:
 ```
-POST /api/submissions/uuid-500/revise
+PATCH /api/submissions/uuid-500/revise
 ```
 
-**Request**:
+**Response (Error - 403)**:
 ```json
 {
-  "note": "Please clarify the metrics for step 3"
+  "data": null,
+  "error": "Revision requests are disabled"
 }
 ```
 
-**Response (Success - 200)**:
-```json
-{
-  "data": {
-    "submission_id": "uuid-500",
-    "new_status": "revision_requested"
-  },
-  "error": null
-}
-```
-
-**What happens**:
-1. Changes status: `submitted` → `revision_requested`
-2. Saves admin's note in audit_log
-3. Field staff sees this form in "Needs Revision" section
-4. Field staff can edit and resubmit
+**Notes**:
+- The endpoint remains in place only so older clients fail closed.
+- Approval is the only active admin workflow transition.
 
 **Code location**: `app/api/submissions/[id]/revise/route.ts`
 

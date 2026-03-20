@@ -37,6 +37,7 @@ This is an **internal reporting platform** for Educate! Uganda field staff.
 ✅ View **dashboard** with summary statistics  
 ✅ **Export data** to CSV for analysis  
 ✅ **Manage users** (create, update roles)  
+✅ Browse submissions with **cursor-based pagination** for stable large-list navigation
 
 ---
 
@@ -81,6 +82,9 @@ This is an **internal reporting platform** for Educate! Uganda field staff.
 │   ├── schemas.ts       ← Zod validation schemas
 │   ├── types.ts         ← TypeScript interfaces
 │   ├── utils.ts         ← Helper functions
+│   ├── submissions-cursor.ts ← Cursor encoding/decoding for submissions API
+│   ├── services/
+│   │   └── submissions.ts    ← Shared submission workflow/list service
 │   ├── export-*.ts      ← Export functions (CSV, DOCX)
 │   ├── summarize.ts     ← AI summarization
 │   └── supabase/
@@ -91,7 +95,8 @@ This is an **internal reporting platform** for Educate! Uganda field staff.
 │   └── migrations/      ← Database setup scripts
 │       ├── 001_schema.sql       ← Create tables
 │       ├── 002_rls.sql          ← Security rules
-│       └── 003_seed_weeks.sql   ← Initial data
+│       ├── 003_seed_weeks.sql   ← Initial data
+│       └── 006_submission_workflow_rpcs.sql ← Atomic submit/approve workflows
 │
 ├── public/              ← Static files
 ├── .env.example         ← Environment variables template
@@ -131,6 +136,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
+Submission workflow changes are executed atomically in PostgreSQL via the `submit_submission` and `approve_submission` RPCs introduced in `supabase/migrations/006_submission_workflow_rpcs.sql`. The submissions listing endpoint now uses cursor pagination with `cursor` and `limit` parameters instead of offset pagination.
+
 Open http://localhost:3000 🎉
 
 **Detailed walkthrough?** See [GETTING_STARTED.md](GETTING_STARTED.md)
@@ -168,9 +175,7 @@ Open http://localhost:3000 🎉
    ↓
 4. Click "Review"
    ↓
-5. Read the data, then either:
-   - Click "Approve" → Form marked approved
-   - Click "Request Revision" + add note → Field staff gets notified
+5. Read the data and click "Approve"
    ↓
 ✓ Decision recorded in audit log
 ```
@@ -274,7 +279,7 @@ The backend provides these main endpoints:
 
 ### Authorization (RLS)
 - **Field staff**: Can only see their own submissions
-- **Admin**: Can see all submissions, approve/reject
+- **Admin**: Can see all submissions and approve
 - Rules enforced at database level (PostgreSQL RLS)
 
 ### Data Protection

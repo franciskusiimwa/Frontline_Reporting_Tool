@@ -33,7 +33,7 @@ The app has **3 main roles**:
 ├─────────────────────┤
 │ - Validates data    │
 │ - Checks auth       │
-│ - Saves to DB       │
+│ - Uses shared services |
 │ - Exports reports   │
 └─────────────────────┘
           ↓ (database)
@@ -49,7 +49,7 @@ The app has **3 main roles**:
 │   ADMIN             │
 ├─────────────────────┤
 │ - See all forms     │
-│ - Approve/reject    │
+│ - Approve           │
 │ - Export all data   │
 │ - Manage users      │
 └─────────────────────┘
@@ -154,10 +154,10 @@ When user completes form and clicks "Submit Final":
    ↓
 4. Server:
    - Checks user is logged in
-   - Checks submission exists
    - Validates all data with Zod
-   - Updates status: 'draft' → 'submitted'
-   - Records in audit_log
+   - Calls the shared submissions service
+   - Executes `submit_submission()` in Postgres
+   - Commits status change + audit log atomically
    ↓
 5. Returns success (submission_id)
    ↓
@@ -206,7 +206,7 @@ Here's what happens when an admin approves a submission:
    ↓
 3. Server (with admin auth):
    - Checks user is admin (from profiles.role)
-   - Fetches ALL submissions from database
+   - Fetches a cursor-paginated slice of submissions
    - Joins with profiles table to get user names
    ↓
 4. Displays table of all submissions
@@ -217,33 +217,20 @@ Here's what happens when an admin approves a submission:
 ```
 1. Admin clicks "Approve" button on a submission
    ↓
-2. Page calls API PUT /api/submissions/[id]/approve
+2. Page calls API PATCH /api/submissions/[id]/approve
    ↓
 3. Server:
-   - Checks user is admin
-   - Updates submission status: 'submitted' → 'approved'
-   - Adds entry to audit_log (action: 'approved')
+   - Checks user is logged in
+   - Calls the shared submissions service
+   - Executes `approve_submission()` in Postgres
+   - Updates status + audit log in one transaction
    ↓
 4. Success response
    ↓
 5. Admin sees "Approved ✓" badge on the submission
 ```
 
-### Step 3: Admin Clicks "Request Revision"
-
-```
-1. Admin clicks "Request Revision" and types a note
-   ↓
-2. API call to PUT /api/submissions/[id]/revise
-   ↓
-3. Server:
-   - Updates status: 'submitted' → 'revision_requested'
-   - Saves the note in audit_log
-   ↓
-4. Field staff sees notification that revisions are needed
-   ↓
-5. Field staff can edit and resubmit
-```
+Revision requests are intentionally disabled. Older clients that still call `/api/submissions/[id]/revise` receive a `403` response.
 
 ---
 
