@@ -27,14 +27,17 @@ export function Step8NextWeek() {
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         <div className="space-y-1">
+          <label className="block text-xs font-medium text-gray-700">Priority 1</label>
           <Input placeholder="Priority 1" {...register('next_week_priorities.0')} />
           <FieldError message={nextWeekErrors.next_week_priorities?.[0]?.message as string | undefined} />
         </div>
         <div className="space-y-1">
+          <label className="block text-xs font-medium text-gray-700">Priority 2</label>
           <Input placeholder="Priority 2" {...register('next_week_priorities.1')} />
           <FieldError message={nextWeekErrors.next_week_priorities?.[1]?.message as string | undefined} />
         </div>
         <div className="space-y-1">
+          <label className="block text-xs font-medium text-gray-700">Priority 3</label>
           <Input placeholder="Priority 3" {...register('next_week_priorities.2')} />
           <FieldError message={nextWeekErrors.next_week_priorities?.[2]?.message as string | undefined} />
         </div>
@@ -42,6 +45,7 @@ export function Step8NextWeek() {
 
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-2">
         <h3 className="text-sm font-semibold text-gray-700">Why these priorities</h3>
+        <label className="block text-xs font-medium text-gray-700">Rationale</label>
         <Textarea rows={3} placeholder="Rationale" {...register('next_week_rationale')} />
         <FieldError message={nextWeekErrors.next_week_rationale?.message as string | undefined} />
       </div>

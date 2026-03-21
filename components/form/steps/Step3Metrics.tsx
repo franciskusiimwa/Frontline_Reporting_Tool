@@ -39,47 +39,47 @@ export function Step3Metrics() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <MetricCard title="Scholar Retention">
-        <label className="block text-xs font-medium text-gray-500">Last week count</label>
+        <label className="block text-xs font-medium text-gray-700">Last week count</label>
         <Input type="number" placeholder="Last week" {...register('scholar_retention.last_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">This week count</label>
+        <label className="block text-xs font-medium text-gray-700">This week count</label>
         <Input type="number" placeholder="This week" {...register('scholar_retention.this_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Retention rate (%)</label>
+        <label className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
         <Input type="number" placeholder="Retention rate (%)" {...register('scholar_retention.retention_rate', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Insight</label>
+        <label className="block text-xs font-medium text-gray-700">Insight</label>
         <Textarea rows={2} placeholder="Insight" {...register('scholar_retention.insight')} />
         <FieldError message={metricsErrors.scholar_retention?.insight?.message as string | undefined} />
         </MetricCard>
 
         <MetricCard title="Mentor Retention">
-        <label className="block text-xs font-medium text-gray-500">Last week count</label>
+        <label className="block text-xs font-medium text-gray-700">Last week count</label>
         <Input type="number" placeholder="Last week" {...register('mentor_retention.last_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">This week count</label>
+        <label className="block text-xs font-medium text-gray-700">This week count</label>
         <Input type="number" placeholder="This week" {...register('mentor_retention.this_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Retention rate (%)</label>
+        <label className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
         <Input type="number" placeholder="Retention rate (%)" {...register('mentor_retention.retention_rate', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Insight</label>
+        <label className="block text-xs font-medium text-gray-700">Insight</label>
         <Textarea rows={2} placeholder="Insight" {...register('mentor_retention.insight')} />
         <FieldError message={metricsErrors.mentor_retention?.insight?.message as string | undefined} />
         </MetricCard>
 
         <MetricCard title="Passbook Conversations">
-        <label className="block text-xs font-medium text-gray-500">Mentors started</label>
+        <label className="block text-xs font-medium text-gray-700">Mentors started</label>
         <Input type="number" placeholder="Mentors started" {...register('passbook_conversations.mentors_started', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Percent of scholars reached</label>
+        <label className="block text-xs font-medium text-gray-700">Percent of scholars reached</label>
         <Input type="number" placeholder="% scholars reached" {...register('passbook_conversations.pct_scholars_reached', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Average scholars per mentor</label>
+        <label className="block text-xs font-medium text-gray-700">Average scholars per mentor</label>
         <Input type="number" placeholder="Avg scholars per mentor" {...register('passbook_conversations.avg_scholars_per_mentor', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Insight</label>
+        <label className="block text-xs font-medium text-gray-700">Insight</label>
         <Textarea rows={2} placeholder="Insight" {...register('passbook_conversations.insight')} />
         <FieldError message={metricsErrors.passbook_conversations?.insight?.message as string | undefined} />
         </MetricCard>
 
         <MetricCard title="Class Size Averages">
-        <label className="block text-xs font-medium text-gray-500">Average scholars</label>
+        <label className="block text-xs font-medium text-gray-700">Average scholars</label>
         <Input type="number" placeholder="Avg scholars" {...register('class_size_averages.avg_scholars', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Average non-scholars</label>
+        <label className="block text-xs font-medium text-gray-700">Average non-scholars</label>
         <Input type="number" placeholder="Avg non-scholars" {...register('class_size_averages.avg_non_scholars', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-500">Insight</label>
+        <label className="block text-xs font-medium text-gray-700">Insight</label>
         <Textarea rows={2} placeholder="Insight" {...register('class_size_averages.insight')} />
         <FieldError message={metricsErrors.class_size_averages?.insight?.message as string | undefined} />
         </MetricCard>

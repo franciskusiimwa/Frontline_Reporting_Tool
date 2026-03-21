@@ -25,9 +25,9 @@ export function Step2Snapshot() {
         Required in this section: Top win and Top challenge. If Next does not move, one of those fields is still empty.
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500">Overall Status</label>
+        <label className="block text-xs font-medium text-gray-700">Overall Status</label>
         <select
-          className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+          className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
           {...register('overall_status')}
         >
           <option value="on_track">On Track</option>
@@ -35,12 +35,14 @@ export function Step2Snapshot() {
           <option value="off_track">Off Track</option>
         </select>
       </div>
+      <label className="block text-xs font-medium text-gray-700">Top Win</label>
       <Textarea rows={3} placeholder="Top win" {...register('top_win')} />
       <FieldError message={snapshotErrors.top_win?.message as string | undefined} />
+      <label className="block text-xs font-medium text-gray-700">Top Challenge</label>
       <Textarea rows={3} placeholder="Top challenge" {...register('top_challenge')} />
       <FieldError message={snapshotErrors.top_challenge?.message as string | undefined} />
       <div>
-        <label className="block text-xs font-medium text-gray-500">Confidence Next Week (1-5)</label>
+        <label className="block text-xs font-medium text-gray-700">Confidence Next Week (1-5)</label>
         <input
           type="range"
           min={1}

@@ -27,20 +27,25 @@ export function Step6Risks() {
       </div>
 
       <div className="rounded-md border border-gray-200 p-4 space-y-3">
+        <label className="block text-xs font-medium text-gray-700">Risk Description</label>
         <Input placeholder="Risk description" {...register('risks.0.description')} />
         <FieldError message={riskErrors.risks?.[0]?.description?.message as string | undefined} />
+        <label className="block text-xs font-medium text-gray-700">Severity</label>
         <select
-          className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+          className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
           {...register('risks.0.severity')}
         >
           <option value="H">High</option>
           <option value="M">Medium</option>
           <option value="L">Low</option>
         </select>
+        <label className="block text-xs font-medium text-gray-700">Root Cause</label>
         <Textarea rows={2} placeholder="Root cause" {...register('risks.0.root_cause')} />
         <FieldError message={riskErrors.risks?.[0]?.root_cause?.message as string | undefined} />
+        <label className="block text-xs font-medium text-gray-700">Mitigation</label>
         <Textarea rows={2} placeholder="Mitigation" {...register('risks.0.mitigation')} />
         <FieldError message={riskErrors.risks?.[0]?.mitigation?.message as string | undefined} />
+        <label className="block text-xs font-medium text-gray-700">Support Needed</label>
         <Textarea rows={2} placeholder="Support needed" {...register('risks.0.support_needed')} />
       </div>
     </section>

@@ -24,8 +24,10 @@ export function Step9Reflection() {
       <div className="rounded-md bg-slate-50 p-4 text-sm text-slate-700">
         Required in this section: both reflection boxes must be completed before you can move on to Review.
       </div>
+      <label className="block text-xs font-medium text-gray-700">What Worked</label>
       <Textarea rows={4} placeholder="What worked" {...register('what_worked')} />
       <FieldError message={reflectionErrors.what_worked?.message as string | undefined} />
+      <label className="block text-xs font-medium text-gray-700">What Did Not Work</label>
       <Textarea rows={4} placeholder="What did not work" {...register('what_didnt')} />
       <FieldError message={reflectionErrors.what_didnt?.message as string | undefined} />
     </section>

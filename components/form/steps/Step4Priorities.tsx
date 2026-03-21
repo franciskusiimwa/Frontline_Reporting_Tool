@@ -29,18 +29,22 @@ export function Step4Priorities() {
       {[0, 1, 2].map((idx) => (
         <div key={idx} className="rounded-md border border-gray-200 bg-white p-4 space-y-3 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-700">Priority {idx + 1}</h3>
+          <label className="block text-xs font-medium text-gray-700">Planned</label>
           <Input placeholder="Planned" {...register(`priorities.${idx}.planned` as const)} />
           <FieldError message={priorityErrors.priorities?.[idx]?.planned?.message as string | undefined} />
+          <label className="block text-xs font-medium text-gray-700">Actual</label>
           <Input placeholder="Actual" {...register(`priorities.${idx}.actual` as const)} />
           <FieldError message={priorityErrors.priorities?.[idx]?.actual?.message as string | undefined} />
+          <label className="block text-xs font-medium text-gray-700">Status</label>
           <select
-            className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
+            className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
             {...register(`priorities.${idx}.status` as const)}
           >
             <option value="on_track">On Track</option>
             <option value="at_risk">At Risk</option>
             <option value="off_track">Off Track</option>
           </select>
+          <label className="block text-xs font-medium text-gray-700">Insight</label>
           <Textarea rows={2} placeholder="Insight" {...register(`priorities.${idx}.insight` as const)} />
           <FieldError message={priorityErrors.priorities?.[idx]?.insight?.message as string | undefined} />
         </div>
