@@ -3,13 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { DashboardData, ApiResponse } from '@/lib/types'
 import { logServerError } from '@/lib/server-log'
 
-let dashboardCache: { key: string; expiresAt: number; data: DashboardData } | null = null
-
 const getDashboardData = async (region?: string): Promise<DashboardData> => {
-  const cacheKey = region ?? '__all__'
-  if (dashboardCache && dashboardCache.key === cacheKey && dashboardCache.expiresAt > Date.now()) {
-    return dashboardCache.data
-  }
   const supabase = await createClient()
   let query = supabase.from('submissions').select('region, week_label, status, data').in('status', ['submitted', 'approved'])
   if (region) query = query.eq('region', region)
@@ -101,7 +95,6 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
   const passbook_progress = Array.from(regionalAggregation.entries()).map(([region, ag]) => ({ region, mentors_started: 0, pct_scholars_reached: ag.passbook_sum / Math.max(ag.passbook_count, 1) }))
 
   const result: DashboardData = { retention_trend, regional_comparison, status_distribution, risk_heatmap, class_composition, passbook_progress }
-  dashboardCache = { key: cacheKey, expiresAt: Date.now() + 300 * 1000, data: result }
   return result
 }
 

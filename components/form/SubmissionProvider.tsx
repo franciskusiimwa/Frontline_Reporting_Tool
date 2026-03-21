@@ -5,6 +5,7 @@ import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { draftSchema, type DraftInput } from '@/lib/schemas'
 import type { SubmissionStatus } from '@/lib/types'
+import { useRouter } from 'next/navigation'
 
 interface SubmissionContextValue {
   currentStep: number
@@ -91,6 +92,7 @@ function findFirstErrorPath(errorValue: unknown, parentPath = ''): string | null
 }
 
 export function SubmissionProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
   const methods = useForm<DraftInput>({
     resolver: zodResolver(draftSchema),
     defaultValues: {
@@ -329,6 +331,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
       setStatus('submitted')
       methods.reset(result)
       setSubmitSuccessMessage('Report submitted successfully. Your entry has been received and is now available for admin review.')
+      router.replace('/submit/success')
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to submit')
     } finally {
