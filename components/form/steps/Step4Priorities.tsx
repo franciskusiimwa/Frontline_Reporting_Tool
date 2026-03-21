@@ -4,9 +4,9 @@ import { useFormContext } from 'react-hook-form'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-red-600">{message}</p>
+  return <p id={id} role="alert" className="text-xs text-red-600">{message}</p>
 }
 
 export function Step4Priorities() {
@@ -29,14 +29,15 @@ export function Step4Priorities() {
       {[0, 1, 2].map((idx) => (
         <div key={idx} className="rounded-md border border-gray-200 bg-white p-4 space-y-3 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-700">Priority {idx + 1}</h3>
-          <label className="block text-xs font-medium text-gray-700">Planned</label>
-          <Input placeholder="Planned" {...register(`priorities.${idx}.planned` as const)} />
-          <FieldError message={priorityErrors.priorities?.[idx]?.planned?.message as string | undefined} />
-          <label className="block text-xs font-medium text-gray-700">Actual</label>
-          <Input placeholder="Actual" {...register(`priorities.${idx}.actual` as const)} />
-          <FieldError message={priorityErrors.priorities?.[idx]?.actual?.message as string | undefined} />
-          <label className="block text-xs font-medium text-gray-700">Status</label>
+          <label htmlFor={`priority_${idx + 1}_planned`} className="block text-xs font-medium text-gray-700">Planned</label>
+          <Input id={`priority_${idx + 1}_planned`} placeholder="Planned" aria-invalid={!!priorityErrors.priorities?.[idx]?.planned?.message} aria-describedby={priorityErrors.priorities?.[idx]?.planned?.message ? `priority_${idx + 1}_planned_error` : undefined} {...register(`priorities.${idx}.planned` as const)} />
+          <FieldError id={`priority_${idx + 1}_planned_error`} message={priorityErrors.priorities?.[idx]?.planned?.message as string | undefined} />
+          <label htmlFor={`priority_${idx + 1}_actual`} className="block text-xs font-medium text-gray-700">Actual</label>
+          <Input id={`priority_${idx + 1}_actual`} placeholder="Actual" aria-invalid={!!priorityErrors.priorities?.[idx]?.actual?.message} aria-describedby={priorityErrors.priorities?.[idx]?.actual?.message ? `priority_${idx + 1}_actual_error` : undefined} {...register(`priorities.${idx}.actual` as const)} />
+          <FieldError id={`priority_${idx + 1}_actual_error`} message={priorityErrors.priorities?.[idx]?.actual?.message as string | undefined} />
+          <label htmlFor={`priority_${idx + 1}_status`} className="block text-xs font-medium text-gray-700">Status</label>
           <select
+            id={`priority_${idx + 1}_status`}
             className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
             {...register(`priorities.${idx}.status` as const)}
           >
@@ -44,9 +45,9 @@ export function Step4Priorities() {
             <option value="at_risk">At Risk</option>
             <option value="off_track">Off Track</option>
           </select>
-          <label className="block text-xs font-medium text-gray-700">Insight</label>
-          <Textarea rows={2} placeholder="Insight" {...register(`priorities.${idx}.insight` as const)} />
-          <FieldError message={priorityErrors.priorities?.[idx]?.insight?.message as string | undefined} />
+          <label htmlFor={`priority_${idx + 1}_insight`} className="block text-xs font-medium text-gray-700">Insight</label>
+          <Textarea id={`priority_${idx + 1}_insight`} rows={2} placeholder="Insight" aria-invalid={!!priorityErrors.priorities?.[idx]?.insight?.message} aria-describedby={priorityErrors.priorities?.[idx]?.insight?.message ? `priority_${idx + 1}_insight_error` : undefined} {...register(`priorities.${idx}.insight` as const)} />
+          <FieldError id={`priority_${idx + 1}_insight_error`} message={priorityErrors.priorities?.[idx]?.insight?.message as string | undefined} />
         </div>
       ))}
       </div>

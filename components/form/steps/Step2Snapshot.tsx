@@ -3,9 +3,9 @@
 import { useFormContext } from 'react-hook-form'
 import { Textarea } from '@/components/ui/Textarea'
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-red-600">{message}</p>
+  return <p id={id} role="alert" className="text-xs text-red-600">{message}</p>
 }
 
 export function Step2Snapshot() {
@@ -25,8 +25,9 @@ export function Step2Snapshot() {
         Required in this section: Top win and Top challenge. If Next does not move, one of those fields is still empty.
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-700">Overall Status</label>
+        <label htmlFor="overall_status" className="block text-xs font-medium text-gray-700">Overall Status</label>
         <select
+          id="overall_status"
           className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
           {...register('overall_status')}
         >
@@ -35,15 +36,16 @@ export function Step2Snapshot() {
           <option value="off_track">Off Track</option>
         </select>
       </div>
-      <label className="block text-xs font-medium text-gray-700">Top Win</label>
-      <Textarea rows={3} placeholder="Top win" {...register('top_win')} />
-      <FieldError message={snapshotErrors.top_win?.message as string | undefined} />
-      <label className="block text-xs font-medium text-gray-700">Top Challenge</label>
-      <Textarea rows={3} placeholder="Top challenge" {...register('top_challenge')} />
-      <FieldError message={snapshotErrors.top_challenge?.message as string | undefined} />
+      <label htmlFor="top_win" className="block text-xs font-medium text-gray-700">Top Win</label>
+      <Textarea id="top_win" rows={3} placeholder="Top win" aria-invalid={!!snapshotErrors.top_win?.message} aria-describedby={snapshotErrors.top_win?.message ? 'top_win_error' : undefined} {...register('top_win')} />
+      <FieldError id="top_win_error" message={snapshotErrors.top_win?.message as string | undefined} />
+      <label htmlFor="top_challenge" className="block text-xs font-medium text-gray-700">Top Challenge</label>
+      <Textarea id="top_challenge" rows={3} placeholder="Top challenge" aria-invalid={!!snapshotErrors.top_challenge?.message} aria-describedby={snapshotErrors.top_challenge?.message ? 'top_challenge_error' : undefined} {...register('top_challenge')} />
+      <FieldError id="top_challenge_error" message={snapshotErrors.top_challenge?.message as string | undefined} />
       <div>
-        <label className="block text-xs font-medium text-gray-700">Confidence Next Week (1-5)</label>
+        <label htmlFor="confidence_next_week" className="block text-xs font-medium text-gray-700">Confidence Next Week (1-5)</label>
         <input
+          id="confidence_next_week"
           type="range"
           min={1}
           max={5}

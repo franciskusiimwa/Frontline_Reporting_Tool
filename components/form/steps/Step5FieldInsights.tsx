@@ -3,9 +3,9 @@
 import { useFormContext } from 'react-hook-form'
 import { Textarea } from '@/components/ui/Textarea'
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-red-600">{message}</p>
+  return <p id={id} role="alert" className="text-xs text-red-600">{message}</p>
 }
 
 export function Step5FieldInsights() {
@@ -26,19 +26,19 @@ export function Step5FieldInsights() {
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-2">
-          <h3 className="text-sm font-semibold text-gray-700">Mentor Insights</h3>
-          <Textarea rows={4} placeholder="Mentor insights" {...register('mentor_insights')} />
-          <FieldError message={insightErrors.mentor_insights?.message as string | undefined} />
+          <label htmlFor="mentor_insights" className="text-sm font-semibold text-gray-700">Mentor Insights</label>
+          <Textarea id="mentor_insights" rows={4} placeholder="Mentor insights" aria-invalid={!!insightErrors.mentor_insights?.message} aria-describedby={insightErrors.mentor_insights?.message ? 'mentor_insights_error' : undefined} {...register('mentor_insights')} />
+          <FieldError id="mentor_insights_error" message={insightErrors.mentor_insights?.message as string | undefined} />
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-2">
-          <h3 className="text-sm font-semibold text-gray-700">Scholar Insights</h3>
-          <Textarea rows={4} placeholder="Scholar insights" {...register('scholar_insights')} />
-          <FieldError message={insightErrors.scholar_insights?.message as string | undefined} />
+          <label htmlFor="scholar_insights" className="text-sm font-semibold text-gray-700">Scholar Insights</label>
+          <Textarea id="scholar_insights" rows={4} placeholder="Scholar insights" aria-invalid={!!insightErrors.scholar_insights?.message} aria-describedby={insightErrors.scholar_insights?.message ? 'scholar_insights_error' : undefined} {...register('scholar_insights')} />
+          <FieldError id="scholar_insights_error" message={insightErrors.scholar_insights?.message as string | undefined} />
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-2">
-          <h3 className="text-sm font-semibold text-gray-700">FOA Insights</h3>
-          <Textarea rows={4} placeholder="FOA insights" {...register('foa_insights')} />
-          <FieldError message={insightErrors.foa_insights?.message as string | undefined} />
+          <label htmlFor="foa_insights" className="text-sm font-semibold text-gray-700">FOA Insights</label>
+          <Textarea id="foa_insights" rows={4} placeholder="FOA insights" aria-invalid={!!insightErrors.foa_insights?.message} aria-describedby={insightErrors.foa_insights?.message ? 'foa_insights_error' : undefined} {...register('foa_insights')} />
+          <FieldError id="foa_insights_error" message={insightErrors.foa_insights?.message as string | undefined} />
         </div>
       </div>
     </section>

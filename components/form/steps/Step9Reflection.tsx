@@ -3,9 +3,9 @@
 import { useFormContext } from 'react-hook-form'
 import { Textarea } from '@/components/ui/Textarea'
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-red-600">{message}</p>
+  return <p id={id} role="alert" className="text-xs text-red-600">{message}</p>
 }
 
 export function Step9Reflection() {
@@ -24,12 +24,12 @@ export function Step9Reflection() {
       <div className="rounded-md bg-slate-50 p-4 text-sm text-slate-700">
         Required in this section: both reflection boxes must be completed before you can move on to Review.
       </div>
-      <label className="block text-xs font-medium text-gray-700">What Worked</label>
-      <Textarea rows={4} placeholder="What worked" {...register('what_worked')} />
-      <FieldError message={reflectionErrors.what_worked?.message as string | undefined} />
-      <label className="block text-xs font-medium text-gray-700">What Did Not Work</label>
-      <Textarea rows={4} placeholder="What did not work" {...register('what_didnt')} />
-      <FieldError message={reflectionErrors.what_didnt?.message as string | undefined} />
+      <label htmlFor="what_worked" className="block text-xs font-medium text-gray-700">What Worked</label>
+      <Textarea id="what_worked" rows={4} placeholder="What worked" aria-invalid={!!reflectionErrors.what_worked?.message} aria-describedby={reflectionErrors.what_worked?.message ? 'what_worked_error' : undefined} {...register('what_worked')} />
+      <FieldError id="what_worked_error" message={reflectionErrors.what_worked?.message as string | undefined} />
+      <label htmlFor="what_didnt" className="block text-xs font-medium text-gray-700">What Did Not Work</label>
+      <Textarea id="what_didnt" rows={4} placeholder="What did not work" aria-invalid={!!reflectionErrors.what_didnt?.message} aria-describedby={reflectionErrors.what_didnt?.message ? 'what_didnt_error' : undefined} {...register('what_didnt')} />
+      <FieldError id="what_didnt_error" message={reflectionErrors.what_didnt?.message as string | undefined} />
     </section>
   )
 }

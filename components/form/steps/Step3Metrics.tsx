@@ -5,9 +5,9 @@ import { useFormContext } from 'react-hook-form'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-red-600">{message}</p>
+  return <p id={id} role="alert" className="text-xs text-red-600">{message}</p>
 }
 
 function MetricCard({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
@@ -39,49 +39,49 @@ export function Step3Metrics() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <MetricCard title="Scholar Retention">
-        <label className="block text-xs font-medium text-gray-700">Last week count</label>
-        <Input type="number" placeholder="Last week" {...register('scholar_retention.last_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">This week count</label>
-        <Input type="number" placeholder="This week" {...register('scholar_retention.this_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
-        <Input type="number" placeholder="Retention rate (%)" {...register('scholar_retention.retention_rate', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Insight</label>
-        <Textarea rows={2} placeholder="Insight" {...register('scholar_retention.insight')} />
-        <FieldError message={metricsErrors.scholar_retention?.insight?.message as string | undefined} />
+        <label htmlFor="scholar_retention_last_week" className="block text-xs font-medium text-gray-700">Last week count</label>
+        <Input id="scholar_retention_last_week" type="number" placeholder="Last week" {...register('scholar_retention.last_week', { valueAsNumber: true })} />
+        <label htmlFor="scholar_retention_this_week" className="block text-xs font-medium text-gray-700">This week count</label>
+        <Input id="scholar_retention_this_week" type="number" placeholder="This week" {...register('scholar_retention.this_week', { valueAsNumber: true })} />
+        <label htmlFor="scholar_retention_rate" className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
+        <Input id="scholar_retention_rate" type="number" placeholder="Retention rate (%)" {...register('scholar_retention.retention_rate', { valueAsNumber: true })} />
+        <label htmlFor="scholar_retention_insight" className="block text-xs font-medium text-gray-700">Insight</label>
+        <Textarea id="scholar_retention_insight" rows={2} placeholder="Insight" aria-invalid={!!metricsErrors.scholar_retention?.insight?.message} aria-describedby={metricsErrors.scholar_retention?.insight?.message ? 'scholar_retention_insight_error' : undefined} {...register('scholar_retention.insight')} />
+        <FieldError id="scholar_retention_insight_error" message={metricsErrors.scholar_retention?.insight?.message as string | undefined} />
         </MetricCard>
 
         <MetricCard title="Mentor Retention">
-        <label className="block text-xs font-medium text-gray-700">Last week count</label>
-        <Input type="number" placeholder="Last week" {...register('mentor_retention.last_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">This week count</label>
-        <Input type="number" placeholder="This week" {...register('mentor_retention.this_week', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
-        <Input type="number" placeholder="Retention rate (%)" {...register('mentor_retention.retention_rate', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Insight</label>
-        <Textarea rows={2} placeholder="Insight" {...register('mentor_retention.insight')} />
-        <FieldError message={metricsErrors.mentor_retention?.insight?.message as string | undefined} />
+        <label htmlFor="mentor_retention_last_week" className="block text-xs font-medium text-gray-700">Last week count</label>
+        <Input id="mentor_retention_last_week" type="number" placeholder="Last week" {...register('mentor_retention.last_week', { valueAsNumber: true })} />
+        <label htmlFor="mentor_retention_this_week" className="block text-xs font-medium text-gray-700">This week count</label>
+        <Input id="mentor_retention_this_week" type="number" placeholder="This week" {...register('mentor_retention.this_week', { valueAsNumber: true })} />
+        <label htmlFor="mentor_retention_rate" className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
+        <Input id="mentor_retention_rate" type="number" placeholder="Retention rate (%)" {...register('mentor_retention.retention_rate', { valueAsNumber: true })} />
+        <label htmlFor="mentor_retention_insight" className="block text-xs font-medium text-gray-700">Insight</label>
+        <Textarea id="mentor_retention_insight" rows={2} placeholder="Insight" aria-invalid={!!metricsErrors.mentor_retention?.insight?.message} aria-describedby={metricsErrors.mentor_retention?.insight?.message ? 'mentor_retention_insight_error' : undefined} {...register('mentor_retention.insight')} />
+        <FieldError id="mentor_retention_insight_error" message={metricsErrors.mentor_retention?.insight?.message as string | undefined} />
         </MetricCard>
 
         <MetricCard title="Passbook Conversations">
-        <label className="block text-xs font-medium text-gray-700">Mentors started</label>
-        <Input type="number" placeholder="Mentors started" {...register('passbook_conversations.mentors_started', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Percent of scholars reached</label>
-        <Input type="number" placeholder="% scholars reached" {...register('passbook_conversations.pct_scholars_reached', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Average scholars per mentor</label>
-        <Input type="number" placeholder="Avg scholars per mentor" {...register('passbook_conversations.avg_scholars_per_mentor', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Insight</label>
-        <Textarea rows={2} placeholder="Insight" {...register('passbook_conversations.insight')} />
-        <FieldError message={metricsErrors.passbook_conversations?.insight?.message as string | undefined} />
+        <label htmlFor="passbook_mentors_started" className="block text-xs font-medium text-gray-700">Mentors started</label>
+        <Input id="passbook_mentors_started" type="number" placeholder="Mentors started" {...register('passbook_conversations.mentors_started', { valueAsNumber: true })} />
+        <label htmlFor="passbook_pct_reached" className="block text-xs font-medium text-gray-700">Percent of scholars reached</label>
+        <Input id="passbook_pct_reached" type="number" placeholder="% scholars reached" {...register('passbook_conversations.pct_scholars_reached', { valueAsNumber: true })} />
+        <label htmlFor="passbook_avg_per_mentor" className="block text-xs font-medium text-gray-700">Average scholars per mentor</label>
+        <Input id="passbook_avg_per_mentor" type="number" placeholder="Avg scholars per mentor" {...register('passbook_conversations.avg_scholars_per_mentor', { valueAsNumber: true })} />
+        <label htmlFor="passbook_insight" className="block text-xs font-medium text-gray-700">Insight</label>
+        <Textarea id="passbook_insight" rows={2} placeholder="Insight" aria-invalid={!!metricsErrors.passbook_conversations?.insight?.message} aria-describedby={metricsErrors.passbook_conversations?.insight?.message ? 'passbook_insight_error' : undefined} {...register('passbook_conversations.insight')} />
+        <FieldError id="passbook_insight_error" message={metricsErrors.passbook_conversations?.insight?.message as string | undefined} />
         </MetricCard>
 
         <MetricCard title="Class Size Averages">
-        <label className="block text-xs font-medium text-gray-700">Average scholars</label>
-        <Input type="number" placeholder="Avg scholars" {...register('class_size_averages.avg_scholars', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Average non-scholars</label>
-        <Input type="number" placeholder="Avg non-scholars" {...register('class_size_averages.avg_non_scholars', { valueAsNumber: true })} />
-        <label className="block text-xs font-medium text-gray-700">Insight</label>
-        <Textarea rows={2} placeholder="Insight" {...register('class_size_averages.insight')} />
-        <FieldError message={metricsErrors.class_size_averages?.insight?.message as string | undefined} />
+        <label htmlFor="class_size_avg_scholars" className="block text-xs font-medium text-gray-700">Average scholars</label>
+        <Input id="class_size_avg_scholars" type="number" placeholder="Avg scholars" {...register('class_size_averages.avg_scholars', { valueAsNumber: true })} />
+        <label htmlFor="class_size_avg_non_scholars" className="block text-xs font-medium text-gray-700">Average non-scholars</label>
+        <Input id="class_size_avg_non_scholars" type="number" placeholder="Avg non-scholars" {...register('class_size_averages.avg_non_scholars', { valueAsNumber: true })} />
+        <label htmlFor="class_size_insight" className="block text-xs font-medium text-gray-700">Insight</label>
+        <Textarea id="class_size_insight" rows={2} placeholder="Insight" aria-invalid={!!metricsErrors.class_size_averages?.insight?.message} aria-describedby={metricsErrors.class_size_averages?.insight?.message ? 'class_size_insight_error' : undefined} {...register('class_size_averages.insight')} />
+        <FieldError id="class_size_insight_error" message={metricsErrors.class_size_averages?.insight?.message as string | undefined} />
         </MetricCard>
 
         <div className="md:col-span-2 rounded-lg border border-gray-200 bg-slate-50 p-4">
@@ -100,18 +100,27 @@ export function Step3Metrics() {
         {showAdvanced && (
           <>
             <MetricCard title="Class Composition">
-              <Input type="number" placeholder="Exactly 45" {...register('class_composition.exactly_45', { valueAsNumber: true })} />
-              <Input type="number" placeholder="+1-15" {...register('class_composition.plus_1_15', { valueAsNumber: true })} />
-              <Input type="number" placeholder="+16-30" {...register('class_composition.plus_16_30', { valueAsNumber: true })} />
-              <Input type="number" placeholder="+30+" {...register('class_composition.plus_30_more', { valueAsNumber: true })} />
-              <Textarea rows={2} placeholder="Observations" {...register('class_composition.observations')} />
+              <label htmlFor="class_composition_exactly_45" className="block text-xs font-medium text-gray-700">Exactly 45</label>
+              <Input id="class_composition_exactly_45" type="number" placeholder="Exactly 45" {...register('class_composition.exactly_45', { valueAsNumber: true })} />
+              <label htmlFor="class_composition_plus_1_15" className="block text-xs font-medium text-gray-700">+1-15</label>
+              <Input id="class_composition_plus_1_15" type="number" placeholder="+1-15" {...register('class_composition.plus_1_15', { valueAsNumber: true })} />
+              <label htmlFor="class_composition_plus_16_30" className="block text-xs font-medium text-gray-700">+16-30</label>
+              <Input id="class_composition_plus_16_30" type="number" placeholder="+16-30" {...register('class_composition.plus_16_30', { valueAsNumber: true })} />
+              <label htmlFor="class_composition_plus_30_more" className="block text-xs font-medium text-gray-700">+30+</label>
+              <Input id="class_composition_plus_30_more" type="number" placeholder="+30+" {...register('class_composition.plus_30_more', { valueAsNumber: true })} />
+              <label htmlFor="class_composition_observations" className="block text-xs font-medium text-gray-700">Observations</label>
+              <Textarea id="class_composition_observations" rows={2} placeholder="Observations" {...register('class_composition.observations')} />
             </MetricCard>
 
             <MetricCard title="Composition Deep Dive" className="md:col-span-2">
-              <Textarea rows={2} placeholder="Main reasons" {...register('composition_deep_dive.main_reasons')} />
-              <Textarea rows={2} placeholder="Affected schools" {...register('composition_deep_dive.affected_schools')} />
-              <Textarea rows={2} placeholder="Solutions tried" {...register('composition_deep_dive.solutions_tried')} />
-              <Textarea rows={2} placeholder="Support needed" {...register('composition_deep_dive.support_needed')} />
+              <label htmlFor="deep_dive_main_reasons" className="block text-xs font-medium text-gray-700">Main reasons</label>
+              <Textarea id="deep_dive_main_reasons" rows={2} placeholder="Main reasons" {...register('composition_deep_dive.main_reasons')} />
+              <label htmlFor="deep_dive_affected_schools" className="block text-xs font-medium text-gray-700">Affected schools</label>
+              <Textarea id="deep_dive_affected_schools" rows={2} placeholder="Affected schools" {...register('composition_deep_dive.affected_schools')} />
+              <label htmlFor="deep_dive_solutions_tried" className="block text-xs font-medium text-gray-700">Solutions tried</label>
+              <Textarea id="deep_dive_solutions_tried" rows={2} placeholder="Solutions tried" {...register('composition_deep_dive.solutions_tried')} />
+              <label htmlFor="deep_dive_support_needed" className="block text-xs font-medium text-gray-700">Support needed</label>
+              <Textarea id="deep_dive_support_needed" rows={2} placeholder="Support needed" {...register('composition_deep_dive.support_needed')} />
             </MetricCard>
           </>
         )}
