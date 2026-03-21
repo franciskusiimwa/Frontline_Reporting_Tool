@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:ci": "vitest run --retry=2 --reporter=verbose",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "validate:env": "node scripts/validate-env.mjs"

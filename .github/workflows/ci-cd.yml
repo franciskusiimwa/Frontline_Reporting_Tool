@@ -33,8 +33,23 @@ jobs:
       - name: Run TypeScript typecheck
         run: npm run typecheck
 
+      - name: Show Node and npm versions
+        run: |
+          node --version
+          npm --version
+
       - name: Run test suite
-        run: npm run test
+        run: |
+          set -o pipefail
+          npm run test:ci 2>&1 | tee test-output.log
+
+      - name: Upload test output logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-output
+          path: test-output.log
+          retention-days: 5
 
       - name: Build production bundle
         run: npm run build
