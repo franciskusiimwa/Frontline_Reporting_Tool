@@ -2,13 +2,19 @@
 // Connects directly to Supabase PostgreSQL pooler and runs all migrations
 // Usage: node run-migrations.mjs
 
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const PROJECT_REF = 'ryllvnaypwblvcjnupev'
+// Project ref must come from environment — never hardcode it.
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF
+if (!PROJECT_REF) {
+  console.error('❌ Missing SUPABASE_PROJECT_REF env var (e.g. export SUPABASE_PROJECT_REF=abcdefghijklmnop).')
+  process.exit(1)
+}
+
 const DB_USER = `postgres.${PROJECT_REF}`
 const DB_NAME = 'postgres'
 const DB_PASSWORD = process.env.DB_PASSWORD
@@ -26,11 +32,10 @@ const POOLER_HOSTS = [
   { host: `aws-0-ap-southeast-1.pooler.supabase.com`, port: 5432, mode: 'Session (AP)' },
 ]
 
-const migrations = [
-  '001_schema.sql',
-  '002_rls.sql',
-  '003_seed_weeks.sql',
-]
+const migrationsDir = join(__dirname, 'supabase', 'migrations')
+const migrations = readdirSync(migrationsDir)
+  .filter((file) => /^\d+_.*\.sql$/i.test(file))
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
 
 const { default: pg } = await import('pg')
 const { Client } = pg
@@ -62,14 +67,14 @@ async function main() {
   if (!client) {
     console.error('\n❌ Could not connect via any pooler host.')
     console.error('   Please run migrations manually in the Supabase SQL Editor.')
-    console.error('   See: MANUAL_MIGRATION.md for step-by-step instructions.')
+    console.error('   See: SUPABASE_SETUP.md for step-by-step instructions.')
     process.exit(1)
   }
 
   console.log('\n' + '─'.repeat(50))
 
   for (const file of migrations) {
-    const filePath = join(__dirname, 'supabase', 'migrations', file)
+    const filePath = join(migrationsDir, file)
     const sql = readFileSync(filePath, 'utf8')
     process.stdout.write(`Running ${file}... `)
     try {

@@ -56,6 +56,8 @@ Create a `.env.local` file in your project root:
 ```bash
 # From project root:
 cp .env.example .env.local
+# Windows PowerShell alternative:
+Copy-Item .env.example .env.local
 ```
 
 Now open `.env.local` in your editor and fill in the values:
@@ -76,9 +78,31 @@ NODE_ENV=development
 
 **Don't have a Supabase project yet?** See [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
 
+Run env validation before starting the app:
+
+```bash
+npm run validate:env
+```
+
 ---
 
-## Step 4: Start the Development Server
+## Step 4: Run Database Migrations
+
+Apply all SQL migrations before first run.
+
+```bash
+# Set these env vars first
+# SUPABASE_PROJECT_REF=your-project-ref
+# DB_PASSWORD=your-db-password
+
+node run-migrations.mjs
+```
+
+If you prefer manual execution, use Supabase SQL Editor and apply files in `supabase/migrations/` in order.
+
+---
+
+## Step 5: Start the Development Server
 
 ```bash
 npm run dev
@@ -95,7 +119,7 @@ You should see:
 
 ---
 
-## Step 5: Open in Browser
+## Step 6: Open in Browser
 
 Open your browser and go to:
 
@@ -156,6 +180,12 @@ npm run build
 
 # Run linter (check code style)
 npm run lint
+
+# Type check
+npm run typecheck
+
+# Run tests
+npm run test
 
 # Start production server (after build)
 npm start

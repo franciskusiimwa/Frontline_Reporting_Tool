@@ -3,7 +3,7 @@
 **Everything verified before going live.**
 
 Last Updated: **2026-03-20**  
-Status: **🟢 READY FOR DEPLOYMENT**
+Status: **🟡 NEEDS FINAL VERIFICATION BEFORE DEPLOYMENT**
 
 ---
 
@@ -29,10 +29,14 @@ Status: **🟢 READY FOR DEPLOYMENT**
   - `audit_log` - Action history (append-only)
   - `auth.users` - Authentication (handled by Supabase)
 
-- [x] **Migrations ready** - Three migration files:
+- [x] **Migrations ready** - Seven migration files:
   - `001_schema.sql` - Table creation
   - `002_rls.sql` - Security rules (RLS)
   - `003_seed_weeks.sql` - Initial week data
+  - `004_auth_profile_trigger.sql` - Auth profile automation
+  - `005_name_normalization.sql` - Name formatting support
+  - `006_submission_workflow_rpcs.sql` - Submit/approve workflow RPCs
+  - `007_revision_workflow_rpcs.sql` - Revision request/resubmission RPCs
 
 - [x] **RLS policies configured** - Data access controlled:
   - Field staff: See only their own submissions
@@ -63,18 +67,19 @@ Status: **🟢 READY FOR DEPLOYMENT**
 All 15 endpoints tested and documented:
 
 - [x] `POST /api/auth/register` - Create new user
-- [x] `POST /api/draft` - Save form draft
+- [x] `PATCH /api/draft` - Save form draft
 - [x] `POST /api/submit` - Final form submission
 - [x] `GET /api/submissions` - List submissions (admin)
 - [x] `GET /api/submissions/[id]` - Get one submission
-- [x] `POST /api/submissions/[id]/approve` - Approve (admin)
-- [x] `POST /api/submissions/[id]/revise` - Request revision (admin)
+- [x] `PATCH /api/submissions/[id]/approve` - Approve (admin)
+- [x] `PATCH /api/submissions/[id]/revise` - Request revision (admin)
 - [x] `POST /api/submissions/[id]/summarize` - AI summary (admin)
-- [x] `POST /api/submissions/[id]/export` - Export submission (admin)
+- [x] `GET /api/submissions/[id]/export` - Export submission (admin)
 - [x] `POST /api/export/csv` - Export all to CSV (admin)
 - [x] `GET /api/users` - List users (admin)
 - [x] `POST /api/users` - Create user (admin)
-- [x] `PUT /api/users/[id]` - Update user (admin)
+- [x] `PATCH /api/users/[id]` - Update user (admin)
+- [x] `DELETE /api/users/[id]` - Delete user (admin)
 - [x] `GET /api/dashboard` - Dashboard stats (admin)
 - [x] `GET /api/weeks` - Get current week
 
@@ -144,7 +149,6 @@ Complete guides created for junior developers:
 - [x] **TESTING.md** - Testing strategy & patterns
 - [x] **ENVIRONMENT.md** - Environment variable reference
 - [x] **DEPLOYMENT.md** - Production launch guide
-- [x] **ENVIRONMENT.md** - Config guide
 - [x] **.env.example** - Template for setup
 
 **Total documentation**: 30,000+ words covering every aspect
@@ -156,7 +160,7 @@ Complete guides created for junior developers:
 - [x] **GitHub Actions workflow** - Automated testing/building
   - `.github/workflows/ci-cd.yml` created
   - Runs on push to main/staging/develop
-  - Linting → Building → Security checks
+  - Linting → Typecheck → Tests → Build → Security checks
   - Deployment stages for staging/production
 
 ---
@@ -230,16 +234,16 @@ Three deployment paths documented:
 ## Known Issues & Notes
 
 ### Minor Issues (No Impact)
-1. **Middleware deprecation warning** - Next.js recommends "proxy" instead
-   - Non-critical, doesn't affect functionality
-   - Plan to update in v1.1
+1. **Coverage targets are aspirational** - current coverage is below target
+  - `npm run coverage` generates reports but is not a release gate
+  - Continue expanding integration and route tests
 
 2. **Console debug logging** - 63 linting warnings for cleanup
    - All development/debugging statements
    - Can be removed before production if desired
 
 ### Future Improvements (Not Blocking)
-- [ ] Add unit/integration tests
+- [ ] Expand route/service integration test coverage
 - [ ] Add E2E tests with Playwright
 - [ ] Implement real-time notifications
 - [ ] Add multi-language support

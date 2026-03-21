@@ -125,7 +125,7 @@ At any time, user can save progress:
    ↓
 2. StepperFooter calls SubmissionProvider's saveAsDraft()
    ↓
-3. API call to POST /api/draft
+3. API call to PATCH /api/draft
    ↓
 4. Server validates data with Zod schema
    ↓

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
@@ -22,10 +22,36 @@ function MetricCard({ title, children, className = '' }: { title: string; childr
 export function Step3Metrics() {
   const {
     register,
+    setValue,
+    watch,
     formState: { errors },
   } = useFormContext()
   const metricsErrors = errors as any
   const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const baselineScholars = Number(watch('scholar_retention.baseline_scholars') ?? 0)
+  const scholarThisWeek = Number(watch('scholar_retention.this_week') ?? 0)
+  const mentorsStarted = Number(watch('passbook_conversations.mentors_started') ?? 0)
+  const scholarsReached = Number(watch('passbook_conversations.scholars_reached') ?? 0)
+
+  useEffect(() => {
+    const retentionRate = baselineScholars > 0
+      ? Number(((scholarThisWeek / baselineScholars) * 100).toFixed(1))
+      : 0
+    setValue('scholar_retention.retention_rate', retentionRate, { shouldValidate: true })
+  }, [baselineScholars, scholarThisWeek, setValue])
+
+  useEffect(() => {
+    const pctReached = baselineScholars > 0
+      ? Number(((scholarsReached / baselineScholars) * 100).toFixed(1))
+      : 0
+    const avgPerMentor = mentorsStarted > 0
+      ? Number((scholarsReached / mentorsStarted).toFixed(1))
+      : 0
+
+    setValue('passbook_conversations.pct_scholars_reached', pctReached, { shouldValidate: true })
+    setValue('passbook_conversations.avg_scholars_per_mentor', avgPerMentor, { shouldValidate: true })
+  }, [baselineScholars, mentorsStarted, scholarsReached, setValue])
 
   return (
     <section className="space-y-6">
@@ -39,12 +65,14 @@ export function Step3Metrics() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <MetricCard title="Scholar Retention">
+        <label htmlFor="scholar_retention_baseline" className="block text-xs font-medium text-gray-700">Term baseline (first lesson recruited scholars)</label>
+        <Input id="scholar_retention_baseline" type="number" placeholder="Baseline scholars" {...register('scholar_retention.baseline_scholars', { valueAsNumber: true })} />
         <label htmlFor="scholar_retention_last_week" className="block text-xs font-medium text-gray-700">Last week count</label>
         <Input id="scholar_retention_last_week" type="number" placeholder="Last week" {...register('scholar_retention.last_week', { valueAsNumber: true })} />
         <label htmlFor="scholar_retention_this_week" className="block text-xs font-medium text-gray-700">This week count</label>
         <Input id="scholar_retention_this_week" type="number" placeholder="This week" {...register('scholar_retention.this_week', { valueAsNumber: true })} />
-        <label htmlFor="scholar_retention_rate" className="block text-xs font-medium text-gray-700">Retention rate (%)</label>
-        <Input id="scholar_retention_rate" type="number" placeholder="Retention rate (%)" {...register('scholar_retention.retention_rate', { valueAsNumber: true })} />
+        <label htmlFor="scholar_retention_rate" className="block text-xs font-medium text-gray-700">Retention rate (%) (auto-computed)</label>
+        <Input id="scholar_retention_rate" type="number" readOnly className="bg-gray-50" placeholder="Retention rate (%)" {...register('scholar_retention.retention_rate', { valueAsNumber: true })} />
         <label htmlFor="scholar_retention_insight" className="block text-xs font-medium text-gray-700">Insight</label>
         <Textarea id="scholar_retention_insight" rows={2} placeholder="Insight" aria-invalid={!!metricsErrors.scholar_retention?.insight?.message} aria-describedby={metricsErrors.scholar_retention?.insight?.message ? 'scholar_retention_insight_error' : undefined} {...register('scholar_retention.insight')} />
         <FieldError id="scholar_retention_insight_error" message={metricsErrors.scholar_retention?.insight?.message as string | undefined} />
@@ -65,10 +93,12 @@ export function Step3Metrics() {
         <MetricCard title="Passbook Conversations">
         <label htmlFor="passbook_mentors_started" className="block text-xs font-medium text-gray-700">Mentors started</label>
         <Input id="passbook_mentors_started" type="number" placeholder="Mentors started" {...register('passbook_conversations.mentors_started', { valueAsNumber: true })} />
-        <label htmlFor="passbook_pct_reached" className="block text-xs font-medium text-gray-700">Percent of scholars reached</label>
-        <Input id="passbook_pct_reached" type="number" placeholder="% scholars reached" {...register('passbook_conversations.pct_scholars_reached', { valueAsNumber: true })} />
-        <label htmlFor="passbook_avg_per_mentor" className="block text-xs font-medium text-gray-700">Average scholars per mentor</label>
-        <Input id="passbook_avg_per_mentor" type="number" placeholder="Avg scholars per mentor" {...register('passbook_conversations.avg_scholars_per_mentor', { valueAsNumber: true })} />
+        <label htmlFor="passbook_scholars_reached" className="block text-xs font-medium text-gray-700">Scholars reached (absolute)</label>
+        <Input id="passbook_scholars_reached" type="number" placeholder="Scholars reached" {...register('passbook_conversations.scholars_reached', { valueAsNumber: true })} />
+        <label htmlFor="passbook_pct_reached" className="block text-xs font-medium text-gray-700">Percent of scholars reached (auto-computed)</label>
+        <Input id="passbook_pct_reached" type="number" readOnly className="bg-gray-50" placeholder="% scholars reached" {...register('passbook_conversations.pct_scholars_reached', { valueAsNumber: true })} />
+        <label htmlFor="passbook_avg_per_mentor" className="block text-xs font-medium text-gray-700">Average scholars per mentor (auto-computed)</label>
+        <Input id="passbook_avg_per_mentor" type="number" readOnly className="bg-gray-50" placeholder="Avg scholars per mentor" {...register('passbook_conversations.avg_scholars_per_mentor', { valueAsNumber: true })} />
         <label htmlFor="passbook_insight" className="block text-xs font-medium text-gray-700">Insight</label>
         <Textarea id="passbook_insight" rows={2} placeholder="Insight" aria-invalid={!!metricsErrors.passbook_conversations?.insight?.message} aria-describedby={metricsErrors.passbook_conversations?.insight?.message ? 'passbook_insight_error' : undefined} {...register('passbook_conversations.insight')} />
         <FieldError id="passbook_insight_error" message={metricsErrors.passbook_conversations?.insight?.message as string | undefined} />

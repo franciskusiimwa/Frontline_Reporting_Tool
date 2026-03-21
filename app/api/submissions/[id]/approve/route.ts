@@ -23,6 +23,16 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userData.user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      return NextResponse.json<ApiResponse<null>>({ data: null, error: 'Forbidden' }, { status: 403 })
+    }
+
     const result = await approveSubmission(supabase, id)
     if (!result.ok) {
       if (result.status >= 500) {

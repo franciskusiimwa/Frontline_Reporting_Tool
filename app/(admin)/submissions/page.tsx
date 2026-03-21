@@ -137,6 +137,34 @@ export default function AdminSubmissionsPage() {
     }
   }
 
+  const doGroupPdfExport = async () => {
+    setActionMsg(null)
+    try {
+      const res = await fetch('/api/submissions/export/group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupBy, submissionIds: submissions.map((s) => s.id) }),
+      })
+
+      if (!res.ok) {
+        const json = (await res.json().catch(() => null)) as ApiResponse<null> | null
+        setActionMsg(`Group PDF export failed: ${json?.error ?? 'Unknown error'}`)
+        return
+      }
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `EXP-Group-Report-${groupBy}.pdf`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      setActionMsg('Group PDF export generated successfully.')
+    } catch (err) {
+      setActionMsg(`Group PDF export error: ${(err as Error).message}`)
+    }
+  }
+
   const pageNumber = cursorHistory.length + 1
 
   const goNext = () => {
@@ -173,6 +201,10 @@ export default function AdminSubmissionsPage() {
           <option value="status">Group summary: by status</option>
         </select>
         <button onClick={() => void doGroupSummary()} className="rounded bg-indigo-600 px-3 py-1 text-sm text-white">Generate Group Summary</button>
+        <button onClick={() => void doGroupPdfExport()} className="rounded bg-slate-800 px-3 py-1 text-sm text-white">Generate Group PDF</button>
+        {summaryOutput && (
+          <button onClick={() => setSummaryOutput(null)} className="rounded border border-gray-400 px-3 py-1 text-sm text-gray-700">Back To Original View</button>
+        )}
       </div>
       {actionMsg && <p className="my-2 text-sm text-indigo-700">{actionMsg}</p>}
       {error && <p className="my-2 text-sm text-red-600">{error}</p>}

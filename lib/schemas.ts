@@ -5,6 +5,7 @@ const severity = z.enum(['H', 'M', 'L'])
 const requiredText = (message = 'Required') => z.string().trim().min(1, message)
 
 const scholarRetentionSchema = z.object({
+  baseline_scholars: z.number().min(0),
   last_week: z.number().min(0),
   this_week: z.number().min(0),
   retention_rate: z.number().min(0).max(100),
@@ -20,6 +21,7 @@ const mentorRetentionSchema = z.object({
 
 const passbookSchema = z.object({
   mentors_started: z.number().min(0),
+  scholars_reached: z.number().min(0),
   pct_scholars_reached: z.number().min(0).max(100),
   avg_scholars_per_mentor: z.number().min(0),
   insight: requiredText('Insight is required'),
@@ -103,7 +105,15 @@ export const formDataSchema = z.object({
   what_didnt: requiredText('Required'),
 })
 
-export const draftSchema = formDataSchema.partial()
+export const draftSchema = formDataSchema
+  .partial()
+  .extend({
+    // A draft must at minimum identify which region and week it belongs to,
+    // so incomplete drafts are stored with useful context rather than failing
+    // silently at the DB layer with a raw constraint error.
+    region: requiredText('Region is required to save a draft'),
+    week_label: requiredText('Week is required to save a draft'),
+  })
 
 export type FormDataInput = z.infer<typeof formDataSchema>
 export type DraftInput = z.infer<typeof draftSchema>

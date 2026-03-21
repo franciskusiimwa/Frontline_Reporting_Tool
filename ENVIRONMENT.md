@@ -53,6 +53,23 @@ This guide explains all environment variables used in the PO Project and how to 
 - **Where to get**: Anthropic Console → API Keys
 - **Cost**: Per-token pricing
 
+### Rate Limiting
+
+#### `UPSTASH_REDIS_REST_URL`
+- **Type**: String (URL)
+- **Required**: Yes (production)
+- **Scope**: Private (server-side only)
+- **Description**: Upstash Redis REST endpoint used for distributed API rate limiting
+- **Where to find**: Upstash Console → Redis Database → REST API
+
+#### `UPSTASH_REDIS_REST_TOKEN`
+- **Type**: String (Token)
+- **Required**: Yes (production)
+- **Scope**: Private (server-side only)
+- **Description**: Auth token for Upstash Redis REST API
+- **Where to find**: Upstash Console → Redis Database → REST API
+- **Security**: ⚠️ SENSITIVE - Treat as secret
+
 ### Database
 
 #### `DATABASE_URL`
@@ -108,6 +125,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://staging-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_staging_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_staging_service_key
 NEXT_PUBLIC_APP_URL=https://staging.yourdomain.com
+UPSTASH_REDIS_REST_URL=https://your-staging-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_staging_upstash_token
 NODE_ENV=production
 ANTHROPIC_API_KEY=your_staging_key
 ```
@@ -121,6 +140,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://prod-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_prod_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_prod_service_key
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
+UPSTASH_REDIS_REST_URL=https://your-prod-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_prod_upstash_token
 NODE_ENV=production
 ANTHROPIC_API_KEY=your_prod_key
 ```
@@ -128,6 +149,7 @@ ANTHROPIC_API_KEY=your_prod_key
 **Notes**:
 - Use dedicated production Supabase project
 - Enable monitoring and alerts
+- Use distributed rate limiting via Upstash (required in production)
 - Use secrets manager (AWS, Azure, HashiCorp Vault)
 - Regular backups enabled
 

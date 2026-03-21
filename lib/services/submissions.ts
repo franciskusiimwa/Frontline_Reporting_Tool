@@ -36,6 +36,8 @@ function mapRpcError(message: string | undefined, fallback: string): { status: n
       return { status: 409, error: 'This report has already been submitted.' }
     case 'Only submitted reports can be approved':
       return { status: 409, error: 'Only submitted reports can be approved' }
+    case 'Only submitted reports can be revision requested':
+      return { status: 409, error: 'Only submitted reports can be revision requested' }
     default:
       return { status: 500, error: fallback }
   }
@@ -103,6 +105,24 @@ export async function approveSubmission(
 
   if (error) {
     const mapped = mapRpcError(error.message, 'Failed to approve submission')
+    return { ok: false, ...mapped }
+  }
+
+  return { ok: true, submissionId: String(data ?? submissionId) }
+}
+
+export async function requestRevision(
+  supabase: SupabaseServerClient,
+  submissionId: string,
+  note: string,
+): Promise<MutationResult> {
+  const { data, error } = await supabase.rpc('request_submission_revision', {
+    p_submission_id: submissionId,
+    p_note: note,
+  })
+
+  if (error) {
+    const mapped = mapRpcError(error.message, 'Failed to request revision')
     return { ok: false, ...mapped }
   }
 

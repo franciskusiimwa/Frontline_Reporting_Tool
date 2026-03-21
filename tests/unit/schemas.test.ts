@@ -11,9 +11,9 @@ describe('schemas', () => {
       top_win: 'Strong attendance',
       top_challenge: 'Transport delays',
       confidence_next_week: 4,
-      scholar_retention: { last_week: 100, this_week: 95, retention_rate: 95, insight: 'Slight dip' },
+      scholar_retention: { baseline_scholars: 100, last_week: 100, this_week: 95, retention_rate: 95, insight: 'Slight dip' },
       mentor_retention: { last_week: 30, this_week: 29, retention_rate: 96.7, insight: 'Stable' },
-      passbook_conversations: { mentors_started: 20, pct_scholars_reached: 75, avg_scholars_per_mentor: 12, insight: 'Improving' },
+      passbook_conversations: { mentors_started: 20, scholars_reached: 75, pct_scholars_reached: 75, avg_scholars_per_mentor: 3.8, insight: 'Improving' },
       class_composition: { exactly_45: 4, plus_1_15: 1, plus_16_30: 0, plus_30_more: 0, observations: 'Mostly balanced' },
       class_size_averages: { avg_scholars: 42, avg_non_scholars: 3, insight: 'Healthy mix' },
       composition_deep_dive: { main_reasons: 'Migration', affected_schools: '2 schools', solutions_tried: 'Outreach', support_needed: 'Transport support' },
@@ -59,9 +59,9 @@ describe('schemas', () => {
       top_win: '  ',
       top_challenge: '  ',
       confidence_next_week: 3,
-      scholar_retention: { last_week: 1, this_week: 1, retention_rate: 100, insight: '  ' },
+      scholar_retention: { baseline_scholars: 1, last_week: 1, this_week: 1, retention_rate: 100, insight: '  ' },
       mentor_retention: { last_week: 1, this_week: 1, retention_rate: 100, insight: '  ' },
-      passbook_conversations: { mentors_started: 1, pct_scholars_reached: 60, avg_scholars_per_mentor: 2, insight: '  ' },
+      passbook_conversations: { mentors_started: 1, scholars_reached: 1, pct_scholars_reached: 60, avg_scholars_per_mentor: 2, insight: '  ' },
       class_composition: { exactly_45: 1, plus_1_15: 0, plus_16_30: 0, plus_30_more: 0, observations: '' },
       class_size_averages: { avg_scholars: 1, avg_non_scholars: 1, insight: '  ' },
       composition_deep_dive: { main_reasons: '', affected_schools: '', solutions_tried: '', support_needed: '' },
@@ -89,6 +89,7 @@ describe('schemas', () => {
   it('accepts partial draft payloads', () => {
     const result = draftSchema.safeParse({
       region: 'North',
+      week_label: 'Term 1 Week 1',
       top_win: 'Community engagement increased',
     })
 

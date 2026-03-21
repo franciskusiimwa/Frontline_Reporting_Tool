@@ -59,10 +59,12 @@ Vitest configuration lives in `vitest.config.ts` and uses:
 
 ## Coverage Goals
 
-- **Lines**: ≥ 80%
-- **Branches**: ≥ 75%
-- **Functions**: ≥ 80%
-- **Statements**: ≥ 80%
+- **Current policy**: Coverage is reported but not enforced as a CI gate yet.
+- **Targets** (team goal):
+  - Lines: ≥ 80%
+  - Branches: ≥ 75%
+  - Functions: ≥ 80%
+  - Statements: ≥ 80%
 
 Generate coverage:
 

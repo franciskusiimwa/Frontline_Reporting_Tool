@@ -12,7 +12,7 @@
 | GET | `/api/submissions` | List submissions | Admin or Field staff |
 | GET | `/api/submissions/[id]` | Get one submission | Owner or Admin |
 | PATCH | `/api/submissions/[id]/approve` | Approve submission | Admin |
-| PATCH | `/api/submissions/[id]/revise` | Revision requests disabled (returns 403) | Admin |
+| PATCH | `/api/submissions/[id]/revise` | Request revision from field staff | Admin |
 | POST | `/api/submissions/[id]/summarize` | Get AI summary | Admin |
 | GET | `/api/submissions/[id]/export` | Export single submission | Admin |
 | POST | `/api/submit` | Final form submission | Field staff |
@@ -327,26 +327,38 @@ PATCH /api/submissions/uuid-500/approve
 
 #### `PATCH /api/submissions/[id]/revise`
 
-Revision requests are disabled.
+Request a revision on a submitted report and return it to field staff for updates.
 
-**Who can use**: Admin only, but the endpoint always returns `403`
+**Who can use**: Admin only
 
 **URL Example**:
 ```
 PATCH /api/submissions/uuid-500/revise
 ```
 
-**Response (Error - 403)**:
+**Request Body (optional)**:
 ```json
 {
-  "data": null,
-  "error": "Revision requests are disabled"
+  "note": "Please clarify retention decline in North region."
+}
+```
+
+If `note` is omitted, a default revision note is used.
+
+**Response (Success - 200)**:
+```json
+{
+  "data": {
+    "submissionId": "uuid-500"
+  },
+  "error": null
 }
 ```
 
 **Notes**:
-- The endpoint remains in place only so older clients fail closed.
-- Approval is the only active admin workflow transition.
+- Submission must be in `submitted` status.
+- Status transition is `submitted` → `revision_requested`.
+- Writes an audit log entry with action `revision_requested`.
 
 **Code location**: `app/api/submissions/[id]/revise/route.ts`
 

@@ -23,6 +23,7 @@ export interface WeekConfig {
 }
 
 export interface ScholarRetention {
+  baseline_scholars: number
   last_week: number
   this_week: number
   retention_rate: number
@@ -38,6 +39,7 @@ export interface MentorRetention {
 
 export interface PassbookConversations {
   mentors_started: number
+  scholars_reached: number
   pct_scholars_reached: number
   avg_scholars_per_mentor: number
   insight: string
@@ -80,7 +82,7 @@ export interface RiskRow {
   support_needed: string
 }
 
-export interface FormData {
+export interface ReportData {
   region: string
   po_names: string
   week_label: string
@@ -123,7 +125,7 @@ export interface Submission {
   region: string
   week_label: string
   status: SubmissionStatus
-  data: Partial<FormData>
+  data: Partial<ReportData>
   submitted_at: string | null
   created_at: string
   updated_at: string

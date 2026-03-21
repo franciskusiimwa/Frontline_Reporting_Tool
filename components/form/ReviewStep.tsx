@@ -72,8 +72,13 @@ export function ReviewStep() {
         </SummaryBlock>
 
         <SummaryBlock title="3. Metrics" stepIndex={2}>
+          <SummaryItem label="Scholar baseline" value={values.scholar_retention?.baseline_scholars} />
+          <SummaryItem label="Scholar retention rate" value={`${values.scholar_retention?.retention_rate ?? 0}%`} />
           <SummaryItem label="Scholar retention insight" value={values.scholar_retention?.insight} />
+          <SummaryItem label="Mentor retention rate" value={`${values.mentor_retention?.retention_rate ?? 0}%`} />
           <SummaryItem label="Mentor retention insight" value={values.mentor_retention?.insight} />
+          <SummaryItem label="Passbook scholars reached" value={values.passbook_conversations?.scholars_reached} />
+          <SummaryItem label="Passbook scholars reached %" value={`${values.passbook_conversations?.pct_scholars_reached ?? 0}%`} />
           <SummaryItem label="Passbook insight" value={values.passbook_conversations?.insight} />
           <SummaryItem label="Class size insight" value={values.class_size_averages?.insight} />
         </SummaryBlock>

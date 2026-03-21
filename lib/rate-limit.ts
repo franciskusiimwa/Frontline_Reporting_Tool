@@ -20,15 +20,15 @@ type Bucket = {
 
 const buckets = new Map<string, Bucket>()
 
-let redisRateLimiter: Ratelimit | null = null
-let rateLimiterInitAttempted = false
+// Each unique (windowMs, limit) pair gets its own Ratelimit instance so that
+// per-route thresholds are respected correctly.
+const redisLimiters = new Map<string, Ratelimit>()
+let redisUnavailable = false
 let missingUpstashWarningPrinted = false
 
 function getRedisRateLimiter(windowMs: number, limit: number): Ratelimit | null {
-  if (redisRateLimiter) return redisRateLimiter
-  if (rateLimiterInitAttempted) return null
+  if (redisUnavailable) return null
 
-  rateLimiterInitAttempted = true
   const url = process.env.UPSTASH_REDIS_REST_URL
   const token = process.env.UPSTASH_REDIS_REST_TOKEN
   if (!url || !token) {
@@ -36,19 +36,24 @@ function getRedisRateLimiter(windowMs: number, limit: number): Ratelimit | null 
       process.stderr.write('[WARN] UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN not set; using in-memory rate limiting fallback.\n')
       missingUpstashWarningPrinted = true
     }
+    redisUnavailable = true
     return null
   }
 
+  const cacheKey = `${windowMs}:${limit}`
+  const existing = redisLimiters.get(cacheKey)
+  if (existing) return existing
+
   const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000))
   const redis = new Redis({ url, token })
-  redisRateLimiter = new Ratelimit({
+  const limiter = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(limit, `${windowSeconds} s`),
     analytics: true,
     prefix: 'po-project:ratelimit',
   })
-
-  return redisRateLimiter
+  redisLimiters.set(cacheKey, limiter)
+  return limiter
 }
 
 function getClientIp(request: Request): string {

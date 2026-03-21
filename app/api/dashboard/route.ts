@@ -5,7 +5,10 @@ import { logServerError } from '@/lib/server-log'
 
 const getDashboardData = async (region?: string): Promise<DashboardData> => {
   const supabase = await createClient()
-  let query = supabase.from('submissions').select('region, week_label, status, data').in('status', ['submitted', 'approved'])
+  let query = supabase
+    .from('submissions')
+    .select('region, week_label, status, data')
+    .in('status', ['submitted', 'approved', 'revision_requested'])
   if (region) query = query.eq('region', region)
 
   const { data, error } = await query
@@ -24,7 +27,7 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
   const rows = (data ?? []) as any[]
 
   const retentionByWeek = new Map<string, { sumScholar: number; sumMentor: number; count: number }>()
-  const regionalAggregation = new Map<string, { scholar_sum: number; mentor_sum: number; passbook_sum: number; passbook_count: number; avg_scholars_sum: number; count: number; class_composition: { exactly_45:number; plus_1_15:number; plus_16_30:number; plus_30_more:number }; risk: { H:number; M:number; L:number } }>()
+  const regionalAggregation = new Map<string, { scholar_sum: number; mentor_sum: number; passbook_sum: number; passbook_count: number; mentors_started_sum: number; avg_scholars_sum: number; count: number; class_composition: { exactly_45:number; plus_1_15:number; plus_16_30:number; plus_30_more:number }; risk: { H:number; M:number; L:number } }>()
   const statusCount = new Map<string, number>()
 
   for (const row of rows) {
@@ -35,6 +38,7 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
     const sr = Number(d.scholar_retention?.retention_rate ?? 0)
     const mr = Number(d.mentor_retention?.retention_rate ?? 0)
     const pb = Number(d.passbook_conversations?.pct_scholars_reached ?? 0)
+    const mentorsStarted = Number(d.passbook_conversations?.mentors_started ?? 0)
     const avg_scholars = Number(d.class_size_averages?.avg_scholars ?? 0)
 
     const existingWeek = retentionByWeek.get(week) ?? { sumScholar: 0, sumMentor: 0, count: 0 }
@@ -48,6 +52,7 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
       mentor_sum: 0,
       passbook_sum: 0,
       passbook_count: 0,
+      mentors_started_sum: 0,
       avg_scholars_sum: 0,
       count: 0,
       class_composition: { exactly_45: 0, plus_1_15: 0, plus_16_30: 0, plus_30_more: 0 },
@@ -58,6 +63,7 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
     existingRegion.mentor_sum += mr
     existingRegion.passbook_sum += pb
     existingRegion.passbook_count += 1
+    existingRegion.mentors_started_sum += mentorsStarted
     existingRegion.avg_scholars_sum += avg_scholars
     existingRegion.count += 1
 
@@ -81,10 +87,20 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
   }
 
   const retention_trend = Array.from(retentionByWeek.entries())
-    .map(([week_label, ag]) => ({ week_label, scholar_retention: ag.sumScholar / ag.count, mentor_retention: ag.sumMentor / ag.count }))
+    .map(([week_label, ag]) => ({
+      week_label,
+      scholar_retention: ag.count > 0 ? ag.sumScholar / ag.count : 0,
+      mentor_retention: ag.count > 0 ? ag.sumMentor / ag.count : 0,
+    }))
     .sort((a, b) => a.week_label.localeCompare(b.week_label))
 
-  const regional_comparison = Array.from(regionalAggregation.entries()).map(([region, ag]) => ({ region, scholar_retention: ag.scholar_sum / ag.count, mentor_retention: ag.mentor_sum / ag.count, passbook_pct: ag.passbook_sum / ag.passbook_count, avg_scholars: ag.avg_scholars_sum / ag.count }))
+  const regional_comparison = Array.from(regionalAggregation.entries()).map(([region, ag]) => ({
+    region,
+    scholar_retention: ag.count > 0 ? ag.scholar_sum / ag.count : 0,
+    mentor_retention: ag.count > 0 ? ag.mentor_sum / ag.count : 0,
+    passbook_pct: ag.passbook_count > 0 ? ag.passbook_sum / ag.passbook_count : 0,
+    avg_scholars: ag.count > 0 ? ag.avg_scholars_sum / ag.count : 0,
+  }))
 
   const status_distribution = Array.from(statusCount.entries()).map(([status, count]) => ({ status: status as 'on_track' | 'at_risk' | 'off_track', count }))
 
@@ -92,7 +108,11 @@ const getDashboardData = async (region?: string): Promise<DashboardData> => {
 
   const class_composition = Array.from(regionalAggregation.entries()).map(([region, ag]) => ({ region, exactly_45: ag.class_composition.exactly_45, plus_1_15: ag.class_composition.plus_1_15, plus_16_30: ag.class_composition.plus_16_30, plus_30_more: ag.class_composition.plus_30_more }))
 
-  const passbook_progress = Array.from(regionalAggregation.entries()).map(([region, ag]) => ({ region, mentors_started: 0, pct_scholars_reached: ag.passbook_sum / Math.max(ag.passbook_count, 1) }))
+  const passbook_progress = Array.from(regionalAggregation.entries()).map(([region, ag]) => ({
+    region,
+    mentors_started: ag.mentors_started_sum,
+    pct_scholars_reached: ag.passbook_count > 0 ? ag.passbook_sum / ag.passbook_count : 0,
+  }))
 
   const result: DashboardData = { retention_trend, regional_comparison, status_distribution, risk_heatmap, class_composition, passbook_progress }
   return result
