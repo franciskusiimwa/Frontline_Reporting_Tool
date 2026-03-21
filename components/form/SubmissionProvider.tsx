@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { draftSchema, type DraftInput } from '@/lib/schemas'
-import { useDebounce } from '@/lib/utils'
 import type { SubmissionStatus } from '@/lib/types'
 
 interface SubmissionContextValue {
@@ -22,6 +21,7 @@ interface SubmissionContextValue {
   stepError: string | null
   submitError: string | null
   submitSuccessMessage: string | null
+  handleSaveDraft: () => Promise<void>
   handleFinalSubmit: () => Promise<void>
 }
 
@@ -138,8 +138,8 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState<string | null>(null)
 
   const watchedValues = methods.watch()
-  const debouncedValues = useDebounce(watchedValues, 2000)
   const stepCompletion = useMemo(() => computeStepCompletion((watchedValues ?? {}) as DraftInput), [watchedValues])
+  const hasUnsavedChanges = methods.formState.isDirty
 
   const saveDraft = async (values: DraftInput) => {
     const payload = {
@@ -166,23 +166,103 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     throw new Error('Draft save did not return a submission id')
   }
 
-  useEffect(() => {
-    if (!debouncedValues) return
-    if (isSubmitting) return
+  const saveCurrentDraft = async () => {
+    const values = methods.getValues()
+    const weekLabel = values.week_label?.trim()
 
-    const saveDraftEffect = async () => {
-      setIsSaving(true)
-      try {
-        await saveDraft(debouncedValues)
-        setLastSavedAt(new Date())
-      } catch {
-      } finally {
-        setIsSaving(false)
-      }
+    if (!weekLabel) {
+      throw new Error('Set Week Label in Step 1 before saving draft.')
     }
 
-    void saveDraftEffect()
-  }, [debouncedValues, isSubmitting])
+    const savedSubmissionId = await saveDraft(values)
+    setLastSavedAt(new Date())
+    methods.reset(values)
+    return savedSubmissionId
+  }
+
+  const handleSaveDraft = async () => {
+    setSubmitError(null)
+    setSubmitSuccessMessage(null)
+    setIsSaving(true)
+    try {
+      await saveCurrentDraft()
+      setSubmitSuccessMessage('Draft saved successfully.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Draft save failed'
+      setSubmitError(message)
+      throw err
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  useEffect(() => {
+    if (status === 'submitted') return
+
+    const shouldPromptOnLeave = () => hasUnsavedChanges && !isSubmitting
+
+    const promptToLeave = async (onLeave: () => void) => {
+      if (!shouldPromptOnLeave()) {
+        onLeave()
+        return
+      }
+
+      const shouldLeave = window.confirm('You have unsaved changes. Do you want to leave this page?')
+      if (!shouldLeave) return
+
+      const saveBeforeLeaving = window.confirm('Save draft before leaving? Click OK to save draft, or Cancel to leave without saving.')
+      if (saveBeforeLeaving) {
+        setIsSaving(true)
+        try {
+          await saveCurrentDraft()
+        } catch {
+          const leaveWithoutSaving = window.confirm('Draft save failed. Leave without saving?')
+          if (!leaveWithoutSaving) {
+            setIsSaving(false)
+            return
+          }
+        } finally {
+          setIsSaving(false)
+        }
+      }
+
+      onLeave()
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!shouldPromptOnLeave()) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Element | null
+      const anchor = target?.closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor) return
+      if (anchor.target === '_blank' || anchor.hasAttribute('download')) return
+
+      const href = anchor.getAttribute('href')
+      if (!href || href.startsWith('#')) return
+
+      const nextUrl = new URL(anchor.href, window.location.href)
+      const currentUrl = new URL(window.location.href)
+      if (nextUrl.href === currentUrl.href) return
+
+      if (!shouldPromptOnLeave()) return
+      event.preventDefault()
+      void promptToLeave(() => {
+        window.location.assign(anchor.href)
+      })
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('click', handleDocumentClick, true)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('click', handleDocumentClick, true)
+    }
+  }, [hasUnsavedChanges, isSubmitting, methods, status])
 
   const goNext = async () => {
     setStepError(null)
@@ -231,13 +311,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
       }
 
       let currentSubmissionId = submissionId
-      if (!currentSubmissionId) {
-        currentSubmissionId = await saveDraft(result)
-        setLastSavedAt(new Date())
-      } else {
-        await saveDraft(result)
-        setLastSavedAt(new Date())
-      }
+      currentSubmissionId = await saveCurrentDraft()
 
       const response = await fetch('/api/submit', {
         method: 'POST',
@@ -253,6 +327,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
       }
 
       setStatus('submitted')
+      methods.reset(result)
       setSubmitSuccessMessage('Report submitted successfully. Your entry has been received and is now available for admin review.')
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to submit')
@@ -276,6 +351,7 @@ export function SubmissionProvider({ children }: { children: React.ReactNode }) 
     stepError,
     submitError,
     submitSuccessMessage,
+    handleSaveDraft,
     handleFinalSubmit,
   }), [currentStep, submissionId, status, lastSavedAt, isSaving, isSubmitting, stepError, submitError, submitSuccessMessage, stepCompletion])
 
